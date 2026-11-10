@@ -15,6 +15,24 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 ## Next
 
+- [ ] **"This report does not reach the authorities" message (do first, small).** After every saved report, and in the send note,
+  say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
+  with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English.
+- [ ] **Regional directory with automatic "who to warn" by location.** Owner priority (2026-11-10).
+  - Data: for each of the 17 autonomous communities, Ceuta and Melilla, and the provinces where the programme is provincial
+    (e.g. the three Basque Diputaciones), the official way to report a nest or a sighting: phone (e.g. 012), official app (e.g. avisAP in Asturias),
+    web form or email, and whether it covers V. velutina, V. orientalis or both. Each entry verified on an official site during the run,
+    with the URL and the date checked stored next to it; unverified entries are left out (fallback: town hall, 112 only if immediate danger).
+    Large regions may take several nights: keep a list of done/pending regions in this file.
+  - Lookup on the phone, offline: bundle simplified province boundaries (≤ 300 KB, from IGN/CNIG open data, e.g. via the npm package `es-atlas`;
+    check and record the licence and attribution) and find the province of the report's location with a point-in-polygon test.
+    No network request, nothing sent anywhere. Fall back to the region picker when the point is outside Spain or the lookup fails.
+  - After saving (and in the guide's "If you find a nest"), show "Avisa también a: <organismo>" with one-tap actions that the user performs:
+    call (`tel:`), open the official app or web, or a pre-filled email/message (`mailto:` / Web Share) with species, type, date and a map link.
+    The app never sends anything to the authority by itself.
+  - Region picker in Datos sorted by name; default from the last lookup, otherwise Spain.
+- [ ] **Open feed for authorities (server item, owner deploys).** `GET /reports?bbox=` and `?province=` filters, and an Atom/RSS feed per province,
+  so councils and regional services can follow new reports without accounts. Document it in `server/README.md`.
 - [ ] **Server: on-site photo + message** (server change authorised by this item; the owner deploys).
   New migration `server/migrations/0001_media.sql`: table `report_media` (report id, JPEG ≤ 200 KB, message ≤ 280 chars).
   `POST /reports` accepts optional `photo` (JPEG data URL, ≤ 1280 px, ≤ 200 KB) and `message`; raise the size limit only as needed.
@@ -48,7 +66,6 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [ ] Catalan (`ca`): full translation of `src/lang/es.js` into `src/lang/ca.js`, register in `LANGS`, note "pending native-speaker review" in README.
 - [ ] Galician (`gl`): same as above.
 - [ ] Basque (`eu`): same as above.
-- [ ] Regional directory: split `REGIONS.ES` into the 17 autonomous communities plus Ceuta and Melilla, each with the official way to report a nest (phone, app or web), verified on an official site with the URL and date checked. Region picker sorted by name; default stays Spain.
 - [ ] Share a report without a server: Web Share API (fallback: copy text) with species, type, date and a map link; user chooses exact or ~100 m location; no photo by default.
 - [ ] "Where to look" scene illustration (house eaves, shed, hedge, tall tree, ground hole) with numbered hotspots linked to the guide text.
 - [ ] Interactive ID key: 4-6 yes/no questions (abdomen colour, leg tips, face colour, size, nest place) that end in a species suggestion and link to the species card.
@@ -62,6 +79,12 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [ ] Researcher view: import several GeoJSON exports, merge, and show a simple spread summary (first/last record per area and month). Spread model only after a design note in this file.
 
 ## Parked
+
+- Automatic warnings sent by the server to authorities (checked 2026-11-10, not pursued for now): sending email from the Worker for free
+  needs either a third-party mail service or Cloudflare Email Routing with a domain you own (paid); authorities mostly accept reports only
+  through their own channels (012, avisAP, web forms) and would receive unverified automated messages as spam; forwarding user data to a third
+  party needs its own consent. Instead: one-tap contact performed by the user, and an open feed authorities can follow. Revisit only with an
+  authority that asks for a direct integration and offers an endpoint for it.
 
 - Advertising (checked 2026-11-10, not pursued): ad networks need a paid custom domain (AdSense does not approve `*.github.io`), a certified cookie-consent platform in the EU, and third-party tracking scripts, which break the privacy promise and the CSP; GitHub Pages may not be used to run an online business; ads next to emergency/first-aid content would hurt trust with authorities and beekeepers; expected revenue for a niche app is very low. Funding routes that fit instead: public grants (e.g. FECYT citizen-science line with a research partner and a beekeeper/civil-society partner), regional invasive-species programmes, institutional sponsorship shown as a plain logo without tracking, and donations.
 
