@@ -15,7 +15,33 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 ## Next
 
-- [ ] Waiting for the owner's decision (do not start): which extra fields join the open dataset (photo, notes, nest place, height, exact location for authorities).
+- [ ] **Server: on-site photo + message** (server change authorised by this item; the owner deploys).
+  New migration `server/migrations/0001_media.sql`: table `report_media` (report id, JPEG ≤ 200 KB, message ≤ 280 chars).
+  `POST /reports` accepts optional `photo` (JPEG data URL, ≤ 1280 px, ≤ 200 KB) and `message`; raise the size limit only as needed.
+  Until the owner decides otherwise, photos and messages are **not** published: `GET /reports` and the CSV only add `has_photo`, `has_message`
+  (and later `ai_species`, `ai_confidence`). `GET /` returns `version` and `features` so the app can detect support.
+  Final report must give the owner the exact commands (`npx wrangler d1 execute vespa-control --remote --file=migrations/0001_media.sql`, `npx wrangler deploy`).
+- [ ] **App: on-site photo + message** (only after `GET /` lists the `photo` feature; detect it at runtime and hide the UI otherwise).
+  Photos only from an in-app live camera: `getUserMedia({ video: { facingMode: "environment" } })` started on an explicit tap,
+  frame drawn to a canvas and saved as JPEG (no metadata by construction, ≤ 1280 px, ≤ 200 KB), camera track stopped right after.
+  No `<input type="file">`, no gallery, no paste or drag-and-drop of images. Message field (≤ 280 chars) with a warning not to include
+  names, phone numbers, addresses or people's faces. Photo/message kept only in the outbox until uploaded.
+  Update the consent text and `PRIVACY.md`, bump `CONSENT_VERSION`. Replace `chk_no_file_capture` with the stricter `chk_camera_only`
+  (no file inputs; `getUserMedia` only inside a tap handler; tracks stopped after capture).
+- [ ] **Reliability in low-density areas: weight reports with evidence.** A single report must not be undervalued when it has evidence.
+  Weight per report: 1 base, +1 on-site photo, +0.5 message of 20+ characters, +1 when the AI check (next item) agrees with the species.
+  Levels from the weighted sum of distinct nearby reports (same species, radius, window, 15-min dedupe): < 2 unconfirmed, ≥ 2 probable,
+  ≥ minReports confirmed. So a lone report with photo + message is *probable*, and with AI agreement *confirmed*.
+  Weights tunable in the technician profile; popup lists the reasons. Synthetic checks: lone photo report in an empty area = probable;
+  three photo-less reports within 15 min still count once; AI agreement upgrades. Uses `has_photo`/`has_message`/`ai_*` from the server
+  so every phone computes the same level.
+- [ ] **AI photo check: design note first, then implement after the owner approves it.** Must stay free.
+  Preferred: Cloudflare Workers AI on the Free plan (10,000 Neurons/day; over the limit requests fail, no charge): a vision-language model
+  (e.g. Llama 3.2 11B Vision Instruct) answering a fixed structured question (velutina / orientalis / crabro / other insect / nest / not a hornet + confidence),
+  or an image classifier. Alternative: small on-device model (open licence, adds MBs to the app).
+  The note must cover: model and prompt, Neurons per photo vs. the daily budget with a hard daily cap in code (queue the rest for the next day),
+  evaluation on openly licensed labelled images, failure handling. The AI never rejects or deletes a report; it only adds a suggestion and trust weight.
+- [ ] Owner decision pending (do not implement until written here): are photos and messages published in the open dataset, or used only for verification (trust, AI, technicians)?
 - [ ] Technician nest updates on the server: mark a nest as reported/treated/removed without accounts (design note first: how to avoid vandalism, e.g. a technician code issued by the owner).
 - [ ] Map: let technicians filter community reports by date range; refresh button with last-updated time.
 

@@ -36,7 +36,7 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 - No accounts, no analytics, no telemetry, no ads, no cookies, no fingerprinting, no third-party scripts, fonts or CDNs.
 - Reports are uploaded automatically to the open-data server **only after the first-use consent** (`chk_consent_gate`). Nothing is uploaded without it. If the consent text changes in substance (new fields, new recipients), bump `CONSENT_VERSION` in `src/app.js` so everybody is asked again, and update `PRIVACY.md`.
 - Nothing about reports is kept on the phone once sent: the IndexedDB "records" store is only an outbox for unsent reports (`chk_outbox_only`). Settings may stay in localStorage.
-- Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`) and compass. No camera/file capture while photos are not part of the open dataset (`chk_no_file_capture`). Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
+- Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`) and compass. Photos only from the in-app live camera on an explicit tap, never from files, gallery, paste or drag-and-drop. Until the on-site photo roadmap item is done, `chk_no_file_capture` forbids any capture; that item may only replace it with the stricter `chk_camera_only`. Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
 - Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. The only allowed `connect-src` hosts are `https://commons.wikimedia.org` (opt-in photo titles only) and the open-data API origin in `src/config.js`; never add others. The open-data payload is exactly `publicPayload()` in `src/community.js` (`chk_share_minimal`): never add fields that could identify a person (notes, photos, exact location, exact time, device data).
 - Uploaded locations stay rounded to ~100 m and times to the hour.
 
@@ -52,6 +52,9 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 **Images:**
 - Illustrations: original drawings (SVG, `tools/art.py` or hand-written), stored locally.
 - Real photos: Wikimedia Commons files listed in `PHOTOS` (`src/media.js`), requested only after opt-in; credits come from the Commons API, never typed by hand. Add files only when the species/nest is clearly identified on the file page. Never copyrighted photos from other sites.
+
+**AI:**
+- Any AI (photo checks) must stay within a free allocation with a hard daily cap in code; never enable anything that can bill. The AI never rejects or deletes reports, it only suggests.
 
 **Open-data server (`server/`):**
 - Must stay on Cloudflare's Free plan forever: no paid features, no bindings or products that require a payment method.
