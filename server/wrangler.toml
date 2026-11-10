@@ -9,4 +9,4 @@ ALLOWED_ORIGIN = "https://araya906.github.io"
 [[d1_databases]]
 binding = "DB"
 database_name = "vespa-control"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "127bcf3a-5b5d-4003-acb0-7f72ac29483a"
