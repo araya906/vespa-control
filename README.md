@@ -21,7 +21,7 @@ On Android: open the address in Chrome → ⋮ → *Install app*.
 
 - `index.html`, `css/app.css`: the app shell.
 - `src/`: ES modules (`app.js` UI, `records.js`, `geo.js` nest triangulation, `store.js` on-device storage, `i18n.js` + `lang/*.js` texts, `regions.js`, `guide.js`, `media.js`).
-- `img/`: icons and original SVG illustrations (regenerate with `python3 tools/art.py`).
+- `img/`: icons, original SVG illustrations (regenerate with `python3 tools/art.py`) and reference photos from Wikimedia Commons in `img/photos/` (refresh with `node tools/fetch_photos.mjs`, credits in `src/photos.js`).
 - `vendor/leaflet/`: Leaflet 1.9.4 (BSD-2-Clause).
 - `sw.js`, `manifest.webmanifest`: offline and installation.
 - `server/`: open-data API (Cloudflare Worker + D1, Free plan).

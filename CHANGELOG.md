@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-10 (9)
+
+- Reference photos are now bundled in the app (work offline, no request to Wikimedia when viewing, no opt-in button).
+  `tools/fetch_photos.mjs` downloads them once from Wikimedia Commons with author and licence from the API and updates
+  `src/photos.js` and the offline list in `sw.js`. CSP no longer allows Wikimedia.
+
 ## 2026-11-10 (8)
 
 - Base map: CARTO now requires an API key, so the map and aerial photo come from Spain's IGN/CNIG (IGN Base and PNOA orthophoto,

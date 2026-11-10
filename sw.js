@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
-// (opt-in map tiles, opt-in Wikimedia photos) pass straight through and are never stored.
+// (opt-in map tiles, the open-data server) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-2026-11-10-8";
+const VERSION = "vc-2026-11-10-9";
 const SHELL = [
   "./",
   "index.html",
@@ -21,6 +21,7 @@ const SHELL = [
   "src/guide.js",
   "src/config.js",
   "src/community.js",
+  "src/photos.js",
   "img/icon.svg",
   "img/icon-192.png",
   "img/icon-512.png",
@@ -31,7 +32,9 @@ const SHELL = [
   "img/nests/velutina-primary.svg",
   "img/nests/velutina-secondary.svg",
   "img/nests/orientalis-cavity.svg",
-  "img/nests/crabro-hollow.svg"
+  "img/nests/crabro-hollow.svg",
+  // PHOTOS:BEGIN
+  // PHOTOS:END
 ];
 
 // cache: "reload" bypasses the browser HTTP cache so a new version never stores old files.

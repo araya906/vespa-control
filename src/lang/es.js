@@ -139,8 +139,6 @@ export default {
   id_crabro: "Nativo. Más grande; cabeza y tórax marrón rojizo, abdomen sobre todo amarillo con manchas negras. Déjalo en paz.",
   id_lookalikes: "Se confunde a menudo con: avispa mamut (Megascolia maculata, grande, negra con manchas amarillas, inofensiva), avispas comunes (Vespula, pequeñas, amarillo vivo y negro), sirícidos y sírfidos.",
   art_note: "Ilustración orientativa, no a escala exacta.",
-  show_photos: "Ver fotos reales de avispas y nidos",
-  show_photos_note: "Al pulsar, la app pide las fotos y sus créditos a Wikimedia Commons, que verá tu dirección IP. Tu elección se recuerda en este dispositivo.",
   safety_title: "Seguridad",
   safety_text: "Las picaduras pueden ser peligrosas, sobre todo para personas alérgicas y cerca de los nidos. Los nidos deben retirarlos profesionales formados con equipo de protección. Revisa setos y árboles antes de podarlos o cortarlos.",
   g_emergency_title: "Picadura o ataque",
@@ -252,7 +250,7 @@ export default {
     "Solo se envían tipo, especie, número, estado del nido, hora redondeada y ubicación redondeada a ~100 m.",
     "La ubicación y la brújula se usan solo cuando pulsas el botón correspondiente.",
     "El servidor no guarda tu dirección IP; solo un código cifrado de un día para evitar abusos.",
-    "El mapa base y las fotos de referencia vienen de servidores externos y solo se descargan si tú lo pides."
+    "Las fotos de referencia vienen incluidas en la app. El mapa base viene del Instituto Geográfico Nacional y solo se descarga si tú lo pides."
   ],
   delete_all: "Borrar los ajustes y avisos pendientes de este dispositivo",
   confirm_delete_all: "¿Borrar los ajustes y los avisos que aún no se han enviado? Los avisos ya enviados son públicos y no se pueden borrar desde la app.",
@@ -265,7 +263,6 @@ export default {
   gps_insecure: "El GPS solo funciona si la app se abre desde una dirección web segura (https). Pega tus coordenadas o elige el punto en el mapa.",
   gps_denied: "El permiso de ubicación está bloqueado. Actívalo en los ajustes del navegador para esta página, o pega coordenadas / elige en el mapa.",
   photo_credit: "Foto",
-  photo_offline: "Foto no disponible sin conexión",
   map_street: "Mapa",
   map_sat: "Foto aérea (PNOA)",
   nests_by_status: "Nidos por estado",

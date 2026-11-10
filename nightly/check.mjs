@@ -76,28 +76,23 @@ function chkPrivacy() {
   const connect = csp.match(/connect-src ([^;]+)/)?.[1].trim();
   const api = read("src/config.js").match(/API_BASE = "([^"]*)"/)?.[1] || "";
   const apiOrigin = api ? new URL(api).origin : "";
-  const connectOk = connect === ["'self'", "https://commons.wikimedia.org", apiOrigin].filter(Boolean).join(" ");
+  const connectOk = connect === ["'self'", apiOrigin].filter(Boolean).join(" ");
   check("chk_csp_strict", connectOk && /script-src 'self'(;|$)/.test(csp) && /default-src 'self'/.test(csp), connect);
   const code = walk("src").filter((p) => p.endsWith(".js") && !p.includes("lang")).map((p) => [p, read(p)]);
-  const hosts = code.flatMap(([, s]) => [...s.matchAll(/https:\/\/([a-z0-9.{}-]+)\//gi)].map((m) => m[1].replace("{s}", "a")));
+  // src/photos.js only holds credit links (checked by chk_photos_local), not resources the app loads.
+  const hosts = code.filter(([p]) => !p.endsWith("photos.js"))
+    .flatMap(([, s]) => [...s.matchAll(/https:\/\/([a-z0-9.{}-]+)\//gi)].map((m) => m[1].replace("{s}", "a")));
   const loaded = hosts.filter((h) => !/^(www\.)?(boe\.es|miteco\.gob\.es|creativecommons\.org)$/.test(h));
   const bad = loaded.filter((h) => !hostOk(h));
   check("chk_external_hosts_in_csp", !bad.length, [...new Set(bad)].join(" "));
   const banned = /\b(XMLHttpRequest|sendBeacon|WebSocket|EventSource|watchPosition|userAgentData|getBattery|enumerateDevices|document\.cookie)\b/;
   const offenders = code.filter(([, s]) => banned.test(s)).map(([p]) => p);
   check("chk_no_network_or_tracking_apis", !offenders.length, offenders.join(" "));
-  // The only network call is the opt-in Commons photo request in media.js, and it sends photo titles only.
+  // The only network calls are to the open-data API (community.js).
   const fetchers = code.filter(([, s]) => /\bfetch\(/.test(s)).map(([p]) => p.replace(/\\/g, "/"));
-  const media = read("src/media.js");
-  const oneFetch = (media.match(/\bfetch\(/g) || []).length === 1 && /fetch\(`\$\{COMMONS_API\}\?\$\{q\}`/.test(media)
-    && /COMMONS_API = "https:\/\/commons\.wikimedia\.org\/w\/api\.php"/.test(media);
   const comm = read("src/community.js");
   const commOk = (comm.match(/\bfetch\(`\$\{API_BASE\}/g) || []).length === (comm.match(/\bfetch\(/g) || []).length;
-  const allowedFetchers = ["src/community.js", "src/media.js"];
-  check("chk_only_allowed_fetch", fetchers.every((f) => allowedFetchers.includes(f)) && oneFetch && commOk, fetchers.join(" "));
-  const gallery = read("src/app.js").match(/function renderGallery\([\s\S]*?\n\}/)?.[0] || "";
-  const callers = (read("src/app.js").match(/commonsPhotos\(/g) || []).length;
-  check("chk_photos_opt_in", callers === 1 && /if \(!S\.photosOn[^\n]*return;[\s\S]*commonsPhotos\(/.test(gallery));
+  check("chk_only_allowed_fetch", fetchers.every((f) => f === "src/community.js") && commOk, fetchers.join(" "));
   const app = read("src/app.js");
   const calls = [...app.matchAll(/^.*addBaseLayers\(\);.*$/gm)].map((m) => m[0]);
   // Base tiles may only load from the remembered opt-in or from the user's "load map" click.
@@ -116,6 +111,16 @@ function chkPrivacy() {
   const uploads = (appSrc.match(/uploadRecord\(/g) || []).length;
   check("chk_consent_gate", uploads === 1 && /S\.consent !== true\) return false/.test(send)
     && /async function saveReport[\s\S]*?if \(S\.consent !== true\) return openConsent\(\)/.test(appSrc));
+}
+
+// Reference photos are bundled: every entry points to a local file and carries its author and licence.
+async function chkPhotosLocal() {
+  const { PHOTOS } = await load("src/photos.js");
+  const all = Object.values(PHOTOS).flat();
+  const bad = all.filter((p) => !p.src?.startsWith("img/photos/") || !existsSync(join(ROOT, p.src)) || !p.author || !p.license || !p.page);
+  const appSrc = read("src/app.js");
+  check("chk_photos_local", !bad.length && !/upload\.wikimedia\.org|commons\.wikimedia\.org\/w\/api/.test(appSrc + read("src/media.js")),
+    `${all.length} photos; bad: ${bad.map((p) => p.src).join(" ")}`);
 }
 
 function chkFunctionSize() {
@@ -208,6 +213,7 @@ await chkKeysUsed(es);
 chkOffline();
 chkPrivacy();
 chkFunctionSize();
+await chkPhotosLocal();
 await chkGeo();
 await chkRecords();
 await chkTrust();

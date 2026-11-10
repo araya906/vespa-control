@@ -139,8 +139,6 @@ export default {
   id_crabro: "Native. Larger; reddish-brown head and thorax, abdomen mostly yellow with black marks. Leave it alone.",
   id_lookalikes: "Often confused with: mammoth wasp (Megascolia maculata, large, black with yellow spots, harmless), common wasps (Vespula, small, bright yellow and black), horntails and hoverflies.",
   art_note: "Illustration for guidance, not to exact scale.",
-  show_photos: "Show real photos of hornets and nests",
-  show_photos_note: "When you tap, the app requests the photos and their credits from Wikimedia Commons, which will see your IP address. Your choice is remembered on this device.",
   safety_title: "Safety",
   safety_text: "Stings can be dangerous, especially for allergic people and near nests. Nests must be removed by trained professionals with protective equipment. Check hedges and trees before pruning or cutting them.",
   g_emergency_title: "Sting or attack",
@@ -252,7 +250,7 @@ export default {
     "Only type, species, count, nest status, rounded time and location rounded to ~100 m are sent.",
     "Location and compass are used only when you tap the matching button.",
     "The server does not store your IP address; only a one-day hashed code to prevent abuse.",
-    "The base map and reference photos come from external servers and are downloaded only if you ask for them."
+    "Reference photos are included in the app. The base map comes from Spain's National Geographic Institute and is downloaded only if you ask for it."
   ],
   delete_all: "Delete settings and pending reports from this device",
   confirm_delete_all: "Delete settings and reports not yet sent? Reports already sent are public and cannot be deleted from the app.",
@@ -265,7 +263,6 @@ export default {
   gps_insecure: "GPS only works when the app is opened from a secure web address (https). Paste your coordinates or pick the point on the map.",
   gps_denied: "Location permission is blocked. Allow it in the browser settings for this page, or paste coordinates / pick on the map.",
   photo_credit: "Photo",
-  photo_offline: "Photo not available offline",
   map_street: "Map",
   map_sat: "Aerial photo (PNOA)",
   nests_by_status: "Nests by status",

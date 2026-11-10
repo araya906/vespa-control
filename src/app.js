@@ -1,7 +1,8 @@
 import { LANGS, makeT } from "./i18n.js";
 import { REGIONS, regionText } from "./regions.js";
 import { TYPES, SPECIES, NEST_STATUS, makeRecord, validate, summarise, parseLocation, trustLevels, TRUST_DEFAULTS, TRUST_LEVELS } from "./records.js";
-import { PHOTOS, commonsPhotos, ART, NEST_ART } from "./media.js";
+import { ART, NEST_ART } from "./media.js";
+import { PHOTOS } from "./photos.js";
 import { stationZone, zonePolygon, combineZones } from "./geo.js";
 import { all, put, remove, clearAll, getSetting, setSetting } from "./store.js";
 import { calendarHtml, sourcesHtml } from "./guide.js";
@@ -20,7 +21,6 @@ const S = {
   lang: getSetting("lang", LANGS[browserLang] ? browserLang : "es"),
   region: getSetting("region", "ES"),
   mode: getSetting("mode", "public"),
-  photosOn: getSetting("photos_ok", false),
   trust: { ...TRUST_DEFAULTS, ...getSetting("trust", {}) },
   minLevel: "unconfirmed",
   consent: consentState(),
@@ -97,43 +97,22 @@ function openEmergency() {
   card.scrollIntoView({ block: "start" });
 }
 
-// ---------- species art and opt-in real photos ----------
+// ---------- species art and real photos (both bundled in the app, work offline) ----------
 const link = (url, text) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>` : esc(text);
 
 function photoHtml(p) {
-  return `<figure><img class="remote" loading="lazy" src="${esc(p.thumb)}" alt="${esc(p.file)}" referrerpolicy="no-referrer">
+  return `<figure><img loading="lazy" src="${esc(p.src)}" alt="${esc(p.title)}">
     <figcaption>${esc(t("photo_credit"))}: ${link(p.page, p.author)}${p.license ? ", " + link(p.licenseUrl, p.license) : ""}, Wikimedia Commons</figcaption></figure>`;
 }
 
-// Illustrations are local. Real photos are requested from Wikimedia Commons only after opt-in.
 function renderGallery(el) {
   const key = el.dataset.photos;
   const art = ART[key] ? `<figure class="art"><img src="${ART[key]}" alt="${esc(t("sp_" + key))}"></figure>` : "";
-  el.innerHTML = art;
-  if (!S.photosOn || !PHOTOS[key]) return;
-  commonsPhotos(PHOTOS[key])
-    .then((list) => { el.innerHTML = art + list.map(photoHtml).join(""); })
-    .catch(() => { el.innerHTML = art + `<div class="off">${esc(t("photo_offline"))}</div>`; });
+  el.innerHTML = art + (PHOTOS[key] || []).map(photoHtml).join("");
 }
 
 function renderSpecies() {
   $$("[data-photos]").forEach(renderGallery);
-  $$(".photos-optin").forEach((el) => { el.hidden = S.photosOn; });
-}
-
-function photosOn() {
-  S.photosOn = true;
-  setSetting("photos_ok", true);
-  renderSpecies();
-}
-
-function onRemoteImgError(e) {
-  const img = e.target;
-  if (img.tagName !== "IMG" || !img.classList.contains("remote")) return;
-  const off = document.createElement("div");
-  off.className = "off";
-  off.textContent = t("photo_offline");
-  img.replaceWith(off);
 }
 
 // ---------- report form ----------
@@ -584,7 +563,6 @@ async function deleteAll() {
   await clearAll();
   S.outbox = [];
   S.stations = [];
-  S.photosOn = false;
   S.consent = null;
   applyText();
   $("#del-msg").textContent = t("deleted_all");
@@ -648,7 +626,6 @@ function onDocClick(e) {
     goto(g.dataset.goto);
   }
   if (e.target.closest("[data-sos]")) openEmergency();
-  if (e.target.closest("[data-photos-on]")) photosOn();
   const ty = e.target.closest("[data-type]");
   if (ty) {
     S.type = ty.dataset.type;
@@ -715,7 +692,6 @@ function wire() {
   wireReport();
   wireData();
   document.addEventListener("click", onDocClick);
-  document.addEventListener("error", onRemoteImgError, true);
   $("#map-load").onclick = loadBaseMap;
   $("#add-station").onclick = () => {
     S.stations.push({ id: "s" + Date.now().toString(36), lat: null, lon: null, bearings: [], times: [], startedAt: null });
