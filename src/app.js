@@ -1,6 +1,6 @@
 import { LANGS, makeT } from "./i18n.js";
 import { REGIONS, regionText } from "./regions.js";
-import { TYPES, SPECIES, NEST_STATUS, NEST_SETTING, makeRecord, validate, toGeoJSON, fromGeoJSON, toCSV, mergeRecords, summarise, parseLocation } from "./records.js";
+import { TYPES, SPECIES, NEST_STATUS, NEST_SETTING, makeRecord, validate, toGeoJSON, fromGeoJSON, toCSV, mergeRecords, summarise, parseLocation, trustLevels, TRUST_DEFAULTS, TRUST_LEVELS } from "./records.js";
 import { PHOTOS, commonsPhotos, ART, NEST_ART } from "./media.js";
 import { stationZone, zonePolygon, combineZones } from "./geo.js";
 import { all, put, remove, clearAll, getSetting, setSetting } from "./store.js";
@@ -16,6 +16,8 @@ const S = {
   region: getSetting("region", "ES"),
   mode: getSetting("mode", "public"),
   photosOn: getSetting("photos_ok", false),
+  trust: { ...TRUST_DEFAULTS, ...getSetting("trust", {}) },
+  minLevel: "unconfirmed",
   records: [],
   stations: [],
   filter: "all",
@@ -46,6 +48,9 @@ function applyStatic() {
   $("#nest-art").innerHTML = NEST_ART.map((n) => `<figure><img src="${n.src}" alt="${esc(t(n.key))}" loading="lazy"><figcaption>${esc(t(n.key))}</figcaption></figure>`).join("");
   $$("[name=mode]").forEach((r) => { r.checked = r.value === S.mode; });
   $("#install").hidden = !S.install;
+  const tr = S.trust;
+  $("#trust-hint").textContent = t("trust_hint", { x: tr.minReports, r: tr.radiusM, d: tr.days, m: tr.dedupeMin });
+  [["min", "minReports"], ["radius", "radiusM"], ["days", "days"]].forEach(([id, k]) => { $("#trust-" + id).value = tr[k]; });
 }
 
 function applyText() {
@@ -241,21 +246,30 @@ function loadBaseMap() {
   syncMapConsent();
 }
 
-function icon(r) {
+const OPACITY = { unconfirmed: 0.45, probable: 0.75, confirmed: 1 };
+
+function icon(r, tr) {
   const nest = r.type === "nest", gone = nest && (r.nest_status === "destroyed" || r.nest_status === "inactive");
   const color = gone ? "#9a9a9a" : `var(--sp-${r.species})`;
   const size = nest ? 22 : 16, shape = nest ? "border-radius:4px;transform:rotate(45deg)" : "border-radius:50%";
+  const border = tr.level === "unconfirmed" ? "2px dashed #fff" : "2px solid #fff";
   return L.divIcon({
     className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2],
-    html: `<div style="width:${size}px;height:${size}px;background:${color};${shape};border:2px solid #fff;box-shadow:0 0 0 1px #0006"></div>`
+    html: `<div style="width:${size}px;height:${size}px;background:${color};${shape};border:${border};opacity:${OPACITY[tr.level]};box-shadow:0 0 0 1px #0006"></div>`
   });
 }
 
-function popupHtml(r) {
+function trustLine(tr) {
+  const detail = t("trust_detail", { n: tr.n, r: S.trust.radiusM, d: S.trust.days });
+  return `<span class="trust trust-${tr.level}">${esc(t("trust_title"))}: ${esc(t("trust_" + tr.level))}</span> <small>(${esc(detail)})</small>`;
+}
+
+function popupHtml(r, tr) {
   const when = new Date(r.created).toLocaleString(S.lang);
   const status = r.type === "nest" ? `<label>${esc(t("edit_status"))}<select data-status="${r.id}">${NEST_STATUS.map((x) => `<option value="${x}" ${x === r.nest_status ? "selected" : ""}>${esc(t("st_" + x))}</option>`).join("")}</select></label>` : "";
   return `<div class="popup"><b>${esc(t("type_" + r.type))}: ${esc(t("sp_short_" + r.species))}</b>
     ${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}${r.height_m !== null ? ` &middot; ${r.height_m} m` : ""}
+    <div>${trustLine(tr)}</div>
     ${r.photo ? `<img src="${r.photo}" alt="">` : ""}${r.notes ? `<p>${esc(r.notes)}</p>` : ""}${status}
     <div class="row"><button class="btn small ghost" data-del="${r.id}">${esc(t("delete"))}</button></div></div>`;
 }
@@ -263,13 +277,20 @@ function popupHtml(r) {
 function renderMarkers() {
   if (!markerLayer) return;
   markerLayer.clearLayers();
-  const shown = S.records.filter((r) => S.filter === "all" || r.species === S.filter);
-  shown.forEach((r) => L.marker([r.lat, r.lon], { icon: icon(r), title: t("sp_short_" + r.species) }).bindPopup(() => popupHtml(r)).addTo(markerLayer));
+  const trust = trustLevels(S.records, S.trust);
+  const min = TRUST_LEVELS.indexOf(S.minLevel);
+  const shown = S.records.filter((r) => (S.filter === "all" || r.species === S.filter) && TRUST_LEVELS.indexOf(trust.get(r.id).level) >= min);
+  shown.forEach((r) => {
+    const tr = trust.get(r.id);
+    L.marker([r.lat, r.lon], { icon: icon(r, tr), title: t("sp_short_" + r.species) }).bindPopup(() => popupHtml(r, tr)).addTo(markerLayer);
+  });
   $("#map-count").textContent = t("records_n", { n: shown.length });
 }
 
 function renderFilters() {
   $("#map-filters").innerHTML = ["all", ...SPECIES].map((x) => `<button class="chip" data-filter="${x}" aria-pressed="${S.filter === x}">${x === "all" ? "" : `<span class="dot" style="background:var(--sp-${x})"></span>`}${esc(x === "all" ? t("all") : t("sp_short_" + x))}</button>`).join("");
+  const label = (lv) => lv === "unconfirmed" ? t("trust_any") : (lv === "probable" ? t("trust_probable") + " +" : t("trust_confirmed"));
+  $("#trust-filters").innerHTML = TRUST_LEVELS.map((lv) => `<button class="chip" data-level="${lv}" aria-pressed="${S.minLevel === lv}">${esc(label(lv))}</button>`).join("");
 }
 
 function startPick(target) {
@@ -517,7 +538,10 @@ function renderSummary() {
     return;
   }
   const rows = (obj, pre) => Object.entries(obj).map(([k, v]) => `<tr><td>${esc(t(pre + k))}</td><td class="n">${v}</td></tr>`).join("");
+  const byTrust = {};
+  trustLevels(S.records, S.trust).forEach(({ level }) => { byTrust[level] = (byTrust[level] || 0) + 1; });
   $("#summary").innerHTML = `<table class="sum"><tr><th>${esc(t("species"))}</th><th></th></tr>${rows(s.bySpecies, "sp_short_")}
+    <tr><th>${esc(t("trust_title"))}</th><th></th></tr>${rows(byTrust, "trust_")}
     ${Object.keys(s.nests).length ? `<tr><th>${esc(t("nests_by_status"))}</th><th></th></tr>${rows(s.nests, "st_")}` : ""}</table>
     <p class="hint">${esc(t("records_n", { n: s.total }))}</p>`;
 }
@@ -576,6 +600,21 @@ function wireSettings() {
   });
 }
 
+// Technicians can tune the reliability rule; values are clamped to sensible ranges.
+function wireTrust() {
+  const fields = [["min", "minReports", 1, 50], ["radius", "radiusM", 50, 10000], ["days", "days", 1, 730]];
+  fields.forEach(([id, key, lo, hi]) => {
+    $("#trust-" + id).onchange = (e) => {
+      const v = Math.round(Number(e.target.value));
+      S.trust[key] = Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : TRUST_DEFAULTS[key];
+      setSetting("trust", S.trust);
+      applyStatic();
+      renderMarkers();
+      renderSummary();
+    };
+  });
+}
+
 function renderRegions() {
   $("#region").innerHTML = Object.entries(REGIONS).map(([k, r]) => `<option value="${k}" ${k === S.region ? "selected" : ""}>${esc(regionText(r.name, S.lang))}</option>`).join("");
 }
@@ -593,6 +632,12 @@ function onDocClick(e) {
     S.type = ty.dataset.type;
     $$("#type-seg button").forEach((b) => b.setAttribute("aria-pressed", b === ty));
     syncType();
+  }
+  const lv = e.target.closest("[data-level]");
+  if (lv) {
+    S.minLevel = lv.dataset.level;
+    renderFilters();
+    renderMarkers();
   }
   const fl = e.target.closest("[data-filter]");
   if (fl) {
@@ -652,6 +697,7 @@ function wireData() {
 
 function wire() {
   wireSettings();
+  wireTrust();
   wireReport();
   wireData();
   document.addEventListener("click", onDocClick);

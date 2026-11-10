@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-10 (3)
+
+- Reliability filter: each report is *sin confirmar*, *probable* or *confirmado* depending on how many reports of the same
+  species are within R m and D days (defaults 3 reports, 500 m, 90 days; reports under 15 min apart count once).
+  Faded/dashed markers, map filter by reliability, reliability in popups and summary; technicians can tune X, R and D.
+- Guide: "¿Qué avispa es?" moved right after the emergency card and open by default, so the hornet pictures are visible at once.
+
 ## 2026-11-10 (2)
 
 - Real photos of the three hornets and of their nests (Wikimedia Commons), shown next to the illustrations after one opt-in tap;

@@ -47,7 +47,7 @@ async function chkKeysUsed(es) {
   const rec = await load("src/records.js");
   const dyn = [...rec.TYPES.map((x) => "type_" + x), ...rec.SPECIES.flatMap((x) => ["sp_" + x, "sp_short_" + x]),
     ...rec.NEST_STATUS.map((x) => "st_" + x), ...rec.NEST_SETTING.map((x) => "set_" + x),
-    "warn_fewer_than_3_trips", "warn_roundtrip_shorter_than_nest_time", "gps_insecure", "gps_denied", "gps_fail"];
+    "warn_fewer_than_3_trips", "warn_roundtrip_shorter_than_nest_time", "gps_insecure", "gps_denied", "gps_fail", ...rec.TRUST_LEVELS.map((x) => "trust_" + x)];
   const missing = [...new Set([...htmlKeys, ...srcKeys, ...dyn])].filter((k) => !(k in es));
   check("chk_keys_defined", !missing.length, missing.join(" "));
 }
@@ -147,6 +147,26 @@ async function chkRecords() {
   check("chk_parse_location", p1?.lat === 42.88 && p1?.lon === -8.54 && Math.abs(p2.lat - 42.88) < 1e-6 && Math.abs(p2.lon + 8.54) < 1e-6);
 }
 
+async function chkTrust() {
+  const r = await load("src/records.js");
+  const g = await load("src/geo.js");
+  const base = { lat: 43.3, lon: -2.9 };
+  const day = (d, min = 0) => new Date(Date.UTC(2026, 7, 1 + d, 10, min)).toISOString();
+  const mk = (id, d, dist, brg, extra = {}) => ({ id, species: "velutina", created: day(d), ...g.destination(base, brg, dist), ...extra });
+  const recs = [
+    mk("a", 0, 0, 0), mk("b", 3, 200, 90), mk("c", 10, 300, 180),            // cluster of 3 -> confirmed
+    { ...mk("dup", 0, 50, 45), created: day(0, 5) },                        // 5 min after "a": counts once
+    mk("far", 1, 3000, 0),                                                  // 3 km away -> unconfirmed
+    mk("old", 200, 100, 270),                                               // outside 90-day window
+    mk("other", 2, 100, 0, { species: "orientalis" }),                      // other species
+    mk("pair1", 0, 5000, 90), mk("pair2", 5, 5200, 90)                      // two -> probable
+  ];
+  const m = r.trustLevels(recs);
+  const lv = (id) => m.get(id).level;
+  check("chk_trust_levels", lv("a") === "confirmed" && m.get("a").n === 3 && lv("far") === "unconfirmed" && lv("old") === "unconfirmed"
+    && lv("other") === "unconfirmed" && lv("pair1") === "probable", [...m].map(([k, v]) => `${k}:${v.n}`).join(" "));
+}
+
 const es = await chkI18n();
 await chkKeysUsed(es);
 chkOffline();
@@ -154,6 +174,7 @@ chkPrivacy();
 chkFunctionSize();
 await chkGeo();
 await chkRecords();
+await chkTrust();
 console.log(results.join("\n"));
 console.log(fails.length ? `\nFAIL (${fails.length}): ${fails.join(", ")}` : "\nALL PASS");
 process.exit(fails.length ? 1 : 0);

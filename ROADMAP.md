@@ -10,6 +10,7 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [x] Original SVG illustrations of the three hornets and four nest types (2026-11-10)
 - [x] Public / technician profiles (2026-11-10)
 - [x] Real photos of hornets and nests from Wikimedia Commons, opt-in, credits from the API (2026-11-10)
+- [x] Reliability filter by nearby reports of the same species (2026-11-10)
 
 ## Next
 
@@ -30,6 +31,9 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [ ] Researcher view: import several GeoJSON exports, merge, and show a simple spread summary (first/last record per area and month). Spread model only after a design note in this file.
 
 ## Parked
+
+- Shared open dataset of reports: waiting for the owner's decision on the free backend and the data licence (see conversation 2026-11-10). Do not add any backend or upload until this item is moved to "Next" with the decision written down.
+- Bundle real photos locally (offline, no Wikimedia request): needs a one-time download from the owner's computer; this environment cannot reach Wikimedia.
 
 - Android APK (Trusted Web Activity via Bubblewrap): needs the app hosted on HTTPS first and a signing key kept by the owner. Revisit when hosting is decided.
 - Offline base-map tiles: privacy-neutral but heavy on storage; revisit after user feedback.

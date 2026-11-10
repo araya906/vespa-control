@@ -1,3 +1,5 @@
+import { haversine } from "./geo.js";
+
 export const TYPES = ["sighting", "nest", "apiary_attack", "trap_catch"];
 export const SPECIES = ["velutina", "orientalis", "crabro", "unsure"];
 export const NEST_STATUS = ["active", "reported", "destroyed", "inactive"];
@@ -128,4 +130,33 @@ export function parseLocation(text) {
   const comma = s.match(/^(-?\d{1,2},\d+)\s*[;\s]\s*(-?\d{1,3},\d+)$/);
   if (comma) return ok(Number(comma[1].replace(",", ".")), Number(comma[2].replace(",", ".")));
   return null;
+}
+
+// Reliability: a report is confirmed when enough reports of the same species are nearby in space and time.
+// Reports closer in time than dedupeMin count once (likely the same event or person).
+export const TRUST_DEFAULTS = Object.freeze({ minReports: 3, radiusM: 500, days: 90, dedupeMin: 15 });
+export const TRUST_LEVELS = ["unconfirmed", "probable", "confirmed"];
+
+function distinctInTime(list, dedupeMin) {
+  const times = list.map((r) => Date.parse(r.created)).filter(Number.isFinite).sort((a, b) => a - b);
+  let n = 0, last = -Infinity;
+  for (const tm of times) {
+    if (tm - last >= dedupeMin * 6e4) n++, last = tm;
+  }
+  return n;
+}
+
+export function trustLevels(records, opt = {}) {
+  const o = { ...TRUST_DEFAULTS, ...opt };
+  const win = o.days * 864e5;
+  const out = new Map();
+  for (const r of records) {
+    const t0 = Date.parse(r.created);
+    const near = records.filter((q) => q.species === r.species && r.species !== "unsure"
+      && Math.abs(Date.parse(q.created) - t0) <= win && haversine(r, q) <= o.radiusM);
+    const n = r.species === "unsure" ? 1 : Math.max(1, distinctInTime(near, o.dedupeMin));
+    const level = n >= o.minReports ? "confirmed" : n >= 2 ? "probable" : "unconfirmed";
+    out.set(r.id, { n, level });
+  }
+  return out;
 }

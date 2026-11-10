@@ -74,8 +74,10 @@
         <label class="check"><input type="checkbox" id="map-remember"><span data-i18n="map_remember"></span></label>
       </div>
       <div class="filters" id="map-filters"></div>
+      <div class="filters" id="trust-filters"></div>
       <div id="map"></div>
       <p class="hint" id="map-count"></p>
+      <p class="hint" id="trust-hint"></p>
     </section>
 
     <!-- 3. Guide -->
@@ -90,14 +92,7 @@
           <p class="dont" data-i18n="g_sting_dont"></p></details>
       </article>
 
-      <details class="card g" id="g-wasp"><summary data-i18n="g_wasp_title"></summary>
-        <ol data-i18n-list="g_wasp_steps"></ol></details>
-
-      <details class="card g" id="g-nest"><summary data-i18n="g_nest_title"></summary>
-        <div class="alert warn" data-i18n="safety_nest"></div>
-        <ol data-i18n-list="g_nest_steps"></ol></details>
-
-      <details class="card g" id="g-identify"><summary data-i18n="id_title"></summary>
+      <details class="card g" id="g-identify" open><summary data-i18n="id_title"></summary>
         <p class="hint" data-i18n="id_note"></p>
         <div class="photos-optin">
           <button type="button" class="btn small" data-photos-on data-i18n="show_photos"></button>
@@ -109,6 +104,14 @@
         <p class="hint" data-i18n="art_note"></p>
         <p data-i18n="id_lookalikes"></p>
       </details>
+
+      <details class="card g" id="g-wasp"><summary data-i18n="g_wasp_title"></summary>
+        <ol data-i18n-list="g_wasp_steps"></ol></details>
+
+      <details class="card g" id="g-nest"><summary data-i18n="g_nest_title"></summary>
+        <div class="alert warn" data-i18n="safety_nest"></div>
+        <ol data-i18n-list="g_nest_steps"></ol></details>
+
 
       <details class="card g" id="g-where"><summary data-i18n="g_where_title"></summary>
         <div class="nests" id="nest-art"></div>
@@ -172,6 +175,12 @@
           <label><input type="radio" name="mode" value="tech"><span class="lbl" data-i18n="mode_tech"></span></label>
         </div>
         <p class="hint" data-i18n="mode_hint"></p>
+      </div>
+      <div class="card" data-mode="tech">
+        <h2 data-i18n="trust_settings"></h2>
+        <label><span data-i18n="trust_min"></span><input id="trust-min" type="number" inputmode="numeric" min="1" max="50" step="1"></label>
+        <label><span data-i18n="trust_radius"></span><input id="trust-radius" type="number" inputmode="numeric" min="50" max="10000" step="50"></label>
+        <label><span data-i18n="trust_days"></span><input id="trust-days" type="number" inputmode="numeric" min="1" max="730" step="1"></label>
       </div>
       <div class="card">
         <h2 data-i18n="data_title"></h2>

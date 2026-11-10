@@ -150,3 +150,7 @@ label.check > span { display: inline; font-weight: 400; margin: 0; }
 .photo-note { margin: -8px 0 12px; }
 #install { margin-bottom: 12px; }
 @media (max-width: 380px) { .top p { display: none; } .sos-btn span { display: none; } }
+.trust { font-weight: 600; }
+.trust-unconfirmed { color: var(--muted); }
+.trust-probable { color: var(--warn-ink); }
+.trust-confirmed { color: var(--accent); }
