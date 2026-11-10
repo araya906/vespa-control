@@ -1,9 +1,9 @@
 // VespaControl open-data API (Cloudflare Workers Free plan + D1).
 // Stores only minimal, rounded, anonymous report fields. No IPs, no accounts, no cookies.
-// Routes: GET /  ·  GET /reports (GeoJSON)  ·  GET /reports.csv  ·  POST /reports  ·  DELETE /reports/:id
+// Routes: GET /  ·  GET /reports (GeoJSON)  ·  GET /reports.csv  ·  POST /reports
 
 export const TYPES = ["sighting", "nest", "apiary_attack", "trap_catch"];
-export const SPECIES = ["velutina", "orientalis", "crabro"];
+export const SPECIES = ["velutina", "orientalis", "crabro", "unsure"];
 export const NEST_STATUS = ["active", "reported", "destroyed", "inactive"];
 const DAILY_LIMIT = 30;
 const MAX_AGE_DAYS = 730;
@@ -18,7 +18,6 @@ export function clean(b, now = Date.now()) {
   const t = Date.parse(b.created);
   const lat = Number(b.lat), lon = Number(b.lon);
   const ok = typeof b.id === "string" && /^[A-Za-z0-9-]{8,64}$/.test(b.id)
-    && typeof b.token === "string" && /^[A-Za-z0-9]{24,64}$/.test(b.token)
     && TYPES.includes(b.type) && SPECIES.includes(b.species)
     && Number.isFinite(t) && t <= now + 36e5 && t >= now - MAX_AGE_DAYS * 864e5
     && Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
@@ -39,8 +38,8 @@ function cors(env, req, write) {
   const allow = write ? (origin === env.ALLOWED_ORIGIN ? origin : env.ALLOWED_ORIGIN) : "*";
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Delete-Token",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
@@ -71,15 +70,8 @@ async function postReport(env, req, h) {
   if (!(await underLimit(env, req))) return json({ error: "daily limit reached" }, 429, h);
   await env.DB.prepare(`INSERT OR IGNORE INTO reports (id, created, received, type, species, lat, lon, count, nest_status, del_hash)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(r.id, r.created, hourIso(Date.now()), r.type, r.species, r.lat, r.lon, r.count, r.nest_status, await sha256(body.token)).run();
+    .bind(r.id, r.created, hourIso(Date.now()), r.type, r.species, r.lat, r.lon, r.count, r.nest_status, "").run();
   return json({ ok: true, id: r.id }, 201, h);
-}
-
-async function deleteReport(env, req, id, h) {
-  const token = req.headers.get("X-Delete-Token") || "";
-  if (!/^[A-Za-z0-9]{24,64}$/.test(token)) return json({ error: "token" }, 400, h);
-  const res = await env.DB.prepare("DELETE FROM reports WHERE id = ? AND del_hash = ?").bind(id, await sha256(token)).run();
-  return json({ ok: true, deleted: res.meta?.changes || 0 }, 200, h);
 }
 
 async function listReports(env) {
@@ -104,12 +96,10 @@ function toCSV(rows) {
 
 async function route(req, env) {
   const url = new URL(req.url);
-  const write = req.method === "POST" || req.method === "DELETE";
+  const write = req.method === "POST";
   const h = cors(env, req, write || req.method === "OPTIONS");
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
   if (req.method === "POST" && url.pathname === "/reports") return postReport(env, req, h);
-  const del = url.pathname.match(/^\/reports\/([A-Za-z0-9-]{8,64})$/);
-  if (req.method === "DELETE" && del) return deleteReport(env, req, del[1], h);
   if (req.method !== "GET") return json({ error: "method" }, 405, h);
   const pub = { ...h, "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" };
   if (url.pathname === "/reports") return new Response(JSON.stringify(toGeoJSON(await listReports(env))), { headers: { ...pub, "Content-Type": "application/geo+json; charset=utf-8" } });

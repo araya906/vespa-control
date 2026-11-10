@@ -12,8 +12,8 @@ as open data (CC BY 4.0).
 
 ## What is stored
 
-`reports`: random id, observation time rounded to the hour, reception time rounded to the hour, type, species (velutina, orientalis, crabro),
-latitude/longitude rounded to 3 decimals (~100 m), count, nest status, and a SHA-256 hash of the reporter's private delete token.
+`reports`: random id, observation time rounded to the hour, reception time rounded to the hour, type, species (velutina, orientalis, crabro, unsure),
+latitude/longitude rounded to 3 decimals (~100 m), count, nest status (`del_hash` is unused and always empty).
 No IP addresses, notes, photos, accounts or device data.
 
 `rate`: a salted hash of (day, IP) with a counter, used to cap each connection at 30 reports per day. Rows from previous days are deleted on every write.
@@ -23,7 +23,6 @@ No IP addresses, notes, photos, accounts or device data.
 - `GET /reports`: all shared reports from the last 2 years as GeoJSON (open to everybody, cached 5 min)
 - `GET /reports.csv`: the same as CSV
 - `POST /reports`: add a report (only from the app's origin)
-- `DELETE /reports/:id` with header `X-Delete-Token`: withdraw your own report
 
 ## Deploy (one time, ~10 minutes)
 

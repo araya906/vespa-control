@@ -147,13 +147,21 @@ table.cal td.lv3 { color: var(--accent); }
 label.check { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; font-size: .9rem; }
 label.check input { width: auto; margin: 0; }
 label.check > span { display: inline; font-weight: 400; margin: 0; }
-.photo-note { margin: -8px 0 12px; }
 #install { margin-bottom: 12px; }
 @media (max-width: 380px) { .top p { display: none; } .sos-btn span { display: none; } }
-.share-box { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-bottom: 14px; background: var(--surface); }
-.share-box .hint { margin: 6px 0 0; }
 #dl-geojson, #dl-csv { text-decoration: none; text-align: center; }
 .trust { font-weight: 600; }
 .trust-unconfirmed { color: var(--muted); }
 .trust-probable { color: var(--warn-ink); }
 .trust-confirmed { color: var(--accent); }
+.modal { position: fixed; inset: 0; z-index: 2000; background: #0008; display: flex; align-items: flex-end; justify-content: center; }
+.modal[hidden] { display: none; }
+.modal .sheet { background: var(--bg); color: var(--text); width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto;
+  border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.modal .sheet-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.modal .sheet-top h2 { margin: 0; }
+.modal .sheet-top select { width: auto; margin: 0; }
+.modal ul { padding-left: 1.2em; }
+.modal li { margin-bottom: 8px; }
+.modal .btn { margin-top: 10px; }
+#consent-accept:disabled { opacity: .5; }

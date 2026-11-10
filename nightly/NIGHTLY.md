@@ -34,11 +34,11 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 
 **Privacy (mandatory, never weaken):**
 - No accounts, no analytics, no telemetry, no ads, no cookies, no fingerprinting, no third-party scripts, fonts or CDNs.
-- All user data stays on the device (IndexedDB/localStorage). Nothing is sent anywhere unless the user explicitly exports or shares it.
-- Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`), camera/file picker, compass. Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
-- Photos must be re-encoded on device (metadata stripped) before saving.
+- Reports are uploaded automatically to the open-data server **only after the first-use consent** (`chk_consent_gate`). Nothing is uploaded without it. If the consent text changes in substance (new fields, new recipients), bump `CONSENT_VERSION` in `src/app.js` so everybody is asked again, and update `PRIVACY.md`.
+- Nothing about reports is kept on the phone once sent: the IndexedDB "records" store is only an outbox for unsent reports (`chk_outbox_only`). Settings may stay in localStorage.
+- Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`) and compass. No camera/file capture while photos are not part of the open dataset (`chk_no_file_capture`). Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
 - Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. The only allowed `connect-src` hosts are `https://commons.wikimedia.org` (opt-in photo titles only) and the open-data API origin in `src/config.js`; never add others. The open-data payload is exactly `publicPayload()` in `src/community.js` (`chk_share_minimal`): never add fields that could identify a person (notes, photos, exact location, exact time, device data).
-- Exports meant for sharing keep rounding locations (~100 m) and dropping photos.
+- Uploaded locations stay rounded to ~100 m and times to the hour.
 
 **Safety content:**
 - Never tell the public to remove, burn, spray or block a nest. Removal is for trained professionals.

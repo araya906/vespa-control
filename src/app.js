@@ -1,11 +1,11 @@
 import { LANGS, makeT } from "./i18n.js";
 import { REGIONS, regionText } from "./regions.js";
-import { TYPES, SPECIES, NEST_STATUS, NEST_SETTING, makeRecord, validate, toGeoJSON, fromGeoJSON, toCSV, mergeRecords, summarise, parseLocation, trustLevels, TRUST_DEFAULTS, TRUST_LEVELS } from "./records.js";
+import { TYPES, SPECIES, NEST_STATUS, makeRecord, validate, summarise, parseLocation, trustLevels, TRUST_DEFAULTS, TRUST_LEVELS } from "./records.js";
 import { PHOTOS, commonsPhotos, ART, NEST_ART } from "./media.js";
 import { stationZone, zonePolygon, combineZones } from "./geo.js";
 import { all, put, remove, clearAll, getSetting, setSetting } from "./store.js";
 import { calendarHtml, sourcesHtml } from "./guide.js";
-import { communityEnabled, newToken, shareRecord, unshareRecord, loadCommunity } from "./community.js";
+import { communityEnabled, uploadRecord, loadCommunity } from "./community.js";
 import { API_BASE } from "./config.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -13,6 +13,9 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const TABS = ["report", "map", "guide", "find", "data"];
 const browserLang = (navigator.language || "es").slice(0, 2);
+// Bump when the consent text changes in substance, so everybody is asked again.
+const CONSENT_VERSION = "2026-11-10";
+const consentState = () => ({ [CONSENT_VERSION]: true, declined: false })[getSetting("consent", "")] ?? null;
 const S = {
   lang: getSetting("lang", LANGS[browserLang] ? browserLang : "es"),
   region: getSetting("region", "ES"),
@@ -20,14 +23,14 @@ const S = {
   photosOn: getSetting("photos_ok", false),
   trust: { ...TRUST_DEFAULTS, ...getSetting("trust", {}) },
   minLevel: "unconfirmed",
+  consent: consentState(),
   community: [],
-  communityOn: getSetting("community_ok", false),
-  records: [],
+  outbox: [],
+  sent: [],
   stations: [],
   filter: "all",
   type: "sighting",
   loc: null,
-  photo: null,
   pick: null,
   find: null,
   install: null
@@ -52,8 +55,9 @@ function applyStatic() {
   $("#nest-art").innerHTML = NEST_ART.map((n) => `<figure><img src="${n.src}" alt="${esc(t(n.key))}" loading="lazy"><figcaption>${esc(t(n.key))}</figcaption></figure>`).join("");
   $$("[name=mode]").forEach((r) => { r.checked = r.value === S.mode; });
   $("#install").hidden = !S.install;
-  $$("[data-community]").forEach((el) => { el.hidden = !communityEnabled(); });
-  $("#community-consent").hidden = !communityEnabled() || S.community.length > 0;
+  $("#report-form").hidden = S.consent !== true;
+  $("#report-locked").hidden = S.consent === true;
+  $("#consent-status").textContent = t(S.consent === true ? "consent_status_yes" : "consent_status_no");
   $("#dl-geojson").href = API_BASE + "/reports";
   $("#dl-csv").href = API_BASE + "/reports.csv";
   const tr = S.trust;
@@ -68,6 +72,7 @@ function applyText() {
   renderLoc();
   renderStations();
   renderFind();
+  renderOutbox();
   renderSummary();
   renderFilters();
   renderMarkers();
@@ -139,7 +144,6 @@ function buildChoices() {
      <span class="dot" style="background:var(--sp-${x})"></span>${esc(t("sp_" + x))}${ART[x] ? `<img class="thumb" alt="" src="${ART[x]}">` : ""}</label>`).join("");
   const opts = (list, pre, sel) => list.map((x) => `<option value="${x}" ${x === sel ? "selected" : ""}>${esc(t(pre + x))}</option>`).join("");
   $("#nest-status").innerHTML = opts(NEST_STATUS, "st_", $("#nest-status").value || "active");
-  $("#nest-setting").innerHTML = opts(NEST_SETTING, "set_", $("#nest-setting").value || "tree");
   syncType();
 }
 
@@ -172,116 +176,121 @@ function getGPS() {
   });
 }
 
-// Re-encoding through a canvas drops all EXIF/XMP metadata (GPS, device, time).
-async function resizePhoto(file, max = 1280) {
-  const img = await createImageBitmap(file);
-  const k = Math.min(1, max / Math.max(img.width, img.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(img.width * k);
-  c.height = Math.round(img.height * k);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  img.close?.();
-  return c.toDataURL("image/jpeg", 0.72);
-}
-
 function resetForm(form) {
   form.reset();
-  S.photo = null;
   S.loc = null;
-  $("#photo-preview").hidden = true;
   buildChoices();
   renderLoc();
-  renderSummary();
-  renderMarkers();
-  $("#form-ok").hidden = false;
-  setTimeout(() => { $("#form-ok").hidden = true; }, 5e3);
+}
+
+function showFormMsg(key) {
+  const el = $("#form-ok");
+  el.textContent = t(key);
+  el.hidden = false;
+  setTimeout(() => { el.hidden = true; }, 6e3);
 }
 
 async function saveReport(ev) {
   ev.preventDefault();
+  if (S.consent !== true) return openConsent();
   const f = new FormData(ev.target);
   const rec = makeRecord({
-    type: S.type, species: f.get("species"), ...S.loc, count: f.get("count"),
-    nest_status: f.get("nest_status"), nest_setting: f.get("nest_setting"), height_m: f.get("height_m"),
-    notes: f.get("notes"), photo: S.photo, region: S.region,
-    ...(f.get("share") && communityEnabled() && f.get("species") !== "unsure" ? { shared: "pending", share_token: newToken() } : {})
+    type: S.type, species: f.get("species"), ...S.loc, count: f.get("count"), nest_status: f.get("nest_status"), region: S.region
   });
   const errs = validate(rec);
   $("#form-errors").hidden = !errs.length;
   $("#form-errors").innerHTML = errs.map((e) => esc(t(e))).join("<br>");
   if (errs.length) return;
-  await put("records", rec);
-  S.records.push(rec);
   resetForm(ev.target);
-  if (rec.shared === "pending") syncShare(rec);
+  showFormMsg((await queueAndSend(rec)) ? "saved" : "queued");
 }
 
-// ---------- open data (opt-in) ----------
-async function updateRecord(r, changes) {
-  Object.assign(r, changes);
-  await put("records", r);
-  renderMarkers();
+// ---------- upload (nothing is kept on the phone once it is sent) ----------
+// An unsent report waits in the outbox only until it is uploaded, then it is deleted from the phone.
+async function queueAndSend(rec) {
+  await put("records", rec);
+  S.outbox.push(rec);
+  const ok = await sendOne(rec);
+  renderAfterChange();
+  return ok;
 }
 
-async function syncShare(r) {
-  if (!communityEnabled() || r.shared !== "pending" || r.species === "unsure") return;
+async function sendOne(r) {
+  if (!communityEnabled() || S.consent !== true) return false;
   try {
-    await shareRecord(r);
-    await updateRecord(r, { shared: "yes" });
-  } catch {}
-}
-
-function syncPending() {
-  S.records.filter((r) => r.shared === "pending").forEach(syncShare);
-}
-
-async function unshare(r) {
-  try {
-    await unshareRecord(r);
-    await updateRecord(r, { shared: null, share_token: null });
+    await uploadRecord(r);
+    await remove("records", r.id);
+    S.outbox = S.outbox.filter((x) => x.id !== r.id);
+    S.sent.push({ ...r, source: "community" });
     return true;
   } catch {
-    alert(t("unshare_fail"));
     return false;
   }
 }
 
-async function loadCommunityLayer() {
-  if (!communityEnabled()) return;
-  if ($("#community-remember").checked) setSetting("community_ok", true);
+async function flushOutbox() {
+  for (const r of [...S.outbox]) await sendOne(r);
+  renderAfterChange();
+}
+
+function renderAfterChange() {
+  renderOutbox();
+  renderMarkers();
+  renderSummary();
+}
+
+function renderOutbox() {
+  $("#outbox").hidden = !S.outbox.length;
+  $("#outbox").textContent = t("outbox_n", { n: S.outbox.length });
+}
+
+async function refreshCommunity() {
+  if (!communityEnabled() || S.consent !== true) return;
   try {
     S.community = await loadCommunity();
     $("#community-msg").textContent = t("records_n", { n: S.community.length });
   } catch {
     $("#community-msg").textContent = t("community_fail");
   }
-  $("#community-consent").hidden = S.community.length > 0;
   renderMarkers();
   renderSummary();
 }
 
-// Own records win over their community copy.
+// Public map = waiting reports + reports sent this session + everybody's reports from the server.
 function allRecords() {
-  const own = new Set(S.records.map((r) => r.id));
-  return [...S.records, ...S.community.filter((r) => !own.has(r.id))];
+  const seen = new Set();
+  return [...S.outbox.map((r) => ({ ...r, pending: true })), ...S.sent, ...S.community].filter((r) => !seen.has(r.id) && seen.add(r.id));
+}
+
+// ---------- consent (first use) ----------
+function openConsent() {
+  $("#consent").hidden = false;
+  $("#consent-check").checked = S.consent === true;
+  $("#consent-accept").disabled = !$("#consent-check").checked;
+}
+
+async function setConsent(ok) {
+  S.consent = ok;
+  setSetting("consent", ok ? CONSENT_VERSION : "declined");
+  $("#consent").hidden = true;
+  applyStatic();
+  if (!ok) return;
+  await flushOutbox();
+  refreshCommunity();
 }
 
 // ---------- map (base tiles are opt-in) ----------
 function ensureMap() {
   if (map) return syncMapConsent();
   const reg = REGIONS[S.region] || REGIONS.generic;
-  const start = S.loc || S.records[S.records.length - 1];
-  map = L.map("map", { zoomControl: true }).setView(start ? [start.lat, start.lon] : reg.center, start ? 15 : reg.zoom);
+  map = L.map("map", { zoomControl: true }).setView(S.loc ? [S.loc.lat, S.loc.lon] : reg.center, S.loc ? 15 : reg.zoom);
   markerLayer = L.layerGroup().addTo(map);
   findLayer = L.layerGroup().addTo(map);
   map.on("click", onMapClick);
   if (getSetting("tiles_ok", false)) addBaseLayers();
-  if (S.communityOn && !S.community.length) loadCommunityLayer();
   syncMapConsent();
   renderMarkers();
   drawFind();
-  const pts = S.records.map((r) => [r.lat, r.lon]);
-  if (pts.length > 1 && !S.loc) map.fitBounds(pts, { maxZoom: 15, padding: [30, 30] });
 }
 
 function addBaseLayers() {
@@ -313,11 +322,10 @@ function icon(r, tr) {
   const nest = r.type === "nest", gone = nest && (r.nest_status === "destroyed" || r.nest_status === "inactive");
   const color = gone ? "#9a9a9a" : `var(--sp-${r.species})`;
   const size = nest ? 22 : 16, shape = nest ? "border-radius:4px;transform:rotate(45deg)" : "border-radius:50%";
-  const line = tr.level === "unconfirmed" ? "dashed" : "solid";
-  const fill = r.source === "community" ? `background:#fff;border:3px ${line} ${color}` : `background:${color};border:2px ${line} #fff`;
+  const line = tr.level === "unconfirmed" || r.pending ? "dashed" : "solid";
   return L.divIcon({
     className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2],
-    html: `<div style="width:${size}px;height:${size}px;${fill};${shape};opacity:${OPACITY[tr.level]};box-shadow:0 0 0 1px #0006"></div>`
+    html: `<div style="width:${size}px;height:${size}px;background:${color};border:2px ${line} #fff;${shape};opacity:${OPACITY[tr.level]};box-shadow:0 0 0 1px #0006"></div>`
   });
 }
 
@@ -326,34 +334,21 @@ function trustLine(tr) {
   return `<span class="trust trust-${tr.level}">${esc(t("trust_title"))}: ${esc(t("trust_" + tr.level))}</span> <small>(${esc(detail)})</small>`;
 }
 
-function shareHtml(r) {
-  if (!communityEnabled() || r.source === "community" || r.species === "unsure") return "";
-  if (r.shared === "yes") return `<p class="hint">${esc(t("shared_yes"))} <button class="btn small ghost" data-unshare="${r.id}">${esc(t("unshare_btn"))}</button></p>`;
-  if (r.shared === "pending") return `<p class="hint">${esc(t("shared_pending"))}</p>`;
-  return `<button class="btn small" data-share="${r.id}">${esc(t("share_btn"))}</button>`;
-}
-
 function popupHtml(r, tr) {
   const when = new Date(r.created).toLocaleString(S.lang);
-  if (r.source === "community") {
-    return `<div class="popup"><b>${esc(t("type_" + r.type))}: ${esc(t("sp_short_" + r.species))}</b>
-      <span class="hint">${esc(t("community_tag"))}</span><br>${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}
-      <div>${trustLine(tr)}</div></div>`;
-  }
-  const status = r.type === "nest" ? `<label>${esc(t("edit_status"))}<select data-status="${r.id}">${NEST_STATUS.map((x) => `<option value="${x}" ${x === r.nest_status ? "selected" : ""}>${esc(t("st_" + x))}</option>`).join("")}</select></label>` : "";
+  const status = r.type === "nest" && r.nest_status ? ` &middot; ${esc(t("st_" + r.nest_status))}` : "";
   return `<div class="popup"><b>${esc(t("type_" + r.type))}: ${esc(t("sp_short_" + r.species))}</b>
-    ${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}${r.height_m !== null ? ` &middot; ${r.height_m} m` : ""}
-    <div>${trustLine(tr)}</div>
-    ${r.photo ? `<img src="${r.photo}" alt="">` : ""}${r.notes ? `<p>${esc(r.notes)}</p>` : ""}${status}${shareHtml(r)}
-    <div class="row"><button class="btn small ghost" data-del="${r.id}">${esc(t("delete"))}</button></div></div>`;
+    ${r.pending ? `<span class="hint">${esc(t("pending_tag"))}</span><br>` : ""}${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}${status}
+    <div>${trustLine(tr)}</div></div>`;
 }
 
 function renderMarkers() {
   if (!markerLayer) return;
   markerLayer.clearLayers();
-  const trust = trustLevels(allRecords(), S.trust);
+  const recs = allRecords();
+  const trust = trustLevels(recs, S.trust);
   const min = TRUST_LEVELS.indexOf(S.minLevel);
-  const shown = allRecords().filter((r) => (S.filter === "all" || r.species === S.filter) && TRUST_LEVELS.indexOf(trust.get(r.id).level) >= min);
+  const shown = recs.filter((r) => (S.filter === "all" || r.species === S.filter) && TRUST_LEVELS.indexOf(trust.get(r.id).level) >= min);
   shown.forEach((r) => {
     const tr = trust.get(r.id);
     L.marker([r.lat, r.lon], { icon: icon(r, tr), title: t("sp_short_" + r.species) }).bindPopup(() => popupHtml(r, tr)).addTo(markerLayer);
@@ -397,44 +392,6 @@ function onMapClick(e) {
   endPick(true);
 }
 
-async function onShareAction(e) {
-  const find = (attr) => {
-    const el = e.target.closest(`[${attr}]`);
-    return el && S.records.find((r) => r.id === el.getAttribute(attr));
-  };
-  const sh = find("data-share");
-  if (sh) {
-    await updateRecord(sh, { shared: "pending", share_token: sh.share_token || newToken() });
-    syncShare(sh);
-  }
-  const un = find("data-unshare");
-  if (un && confirm(t("confirm_unshare"))) await unshare(un);
-}
-
-async function onPopupAction(e) {
-  await onShareAction(e);
-  const del = e.target.closest("[data-del]");
-  if (!del || !confirm(t("confirm_delete"))) return;
-  const rec = S.records.find((r) => r.id === del.dataset.del);
-  if (rec?.shared === "yes" && !(await unshare(rec))) return;
-  await remove("records", del.dataset.del);
-  S.records = S.records.filter((r) => r.id !== del.dataset.del);
-  map.closePopup();
-  renderMarkers();
-  renderSummary();
-}
-
-async function onStatusChange(e) {
-  const sel = e.target.closest("[data-status]");
-  if (!sel) return;
-  const r = S.records.find((x) => x.id === sel.dataset.status);
-  const upd = makeRecord({ ...r, nest_status: sel.value });
-  await put("records", upd);
-  S.records = S.records.map((x) => x.id === upd.id ? upd : x);
-  renderMarkers();
-  renderSummary();
-}
-
 // ---------- nest finding (technician mode) ----------
 const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const parseTime = (v) => {
@@ -442,8 +399,8 @@ const parseTime = (v) => {
   return m ? Number(m[1]) * (m[2] === undefined ? 1 : 60) + Number(m[2] || 0) : NaN;
 };
 
+// Bait stations live in memory only (this session); nothing is stored on the phone.
 function saveStations() {
-  put("stations", S.stations);
   renderStations();
   renderFind();
 }
@@ -542,7 +499,6 @@ async function onStationAction(e) {
   if (act === "pick") return startPick(st.id);
   if (act === "del-st") {
     S.stations = S.stations.filter((s) => s !== st);
-    remove("stations", st.id);
   }
   await stationLocAction(act, st, card);
   stationDataAction(act, st, card);
@@ -600,80 +556,56 @@ async function saveSuspect() {
   const c = S.find.combined.centroid;
   const rec = makeRecord({
     type: "nest", species: "unsure", lat: c.lat, lon: c.lon, accuracy_m: Math.round(S.find.combined.radiusM),
-    nest_status: "active", notes: t("result") + " (" + t("tab_find") + ")", region: S.region
+    nest_status: "active", region: S.region
   });
-  await put("records", rec);
-  S.records.push(rec);
-  renderMarkers();
-  renderSummary();
+  if (S.consent !== true) return openConsent();
+  await queueAndSend(rec);
   showFind();
 }
 
 // ---------- data ----------
-function download(name, text, type) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([text], { type }));
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-}
-const stamp = () => new Date().toISOString().slice(0, 10);
-
 function renderSummary() {
-  const s = summarise(S.records);
+  const recs = allRecords();
+  const s = summarise(recs);
   if (!s.total) {
     $("#summary").innerHTML = `<p class="hint">${esc(t("none"))}</p>`;
     return;
   }
   const rows = (obj, pre) => Object.entries(obj).map(([k, v]) => `<tr><td>${esc(t(pre + k))}</td><td class="n">${v}</td></tr>`).join("");
   const byTrust = {};
-  const trust = trustLevels(allRecords(), S.trust);
-  S.records.forEach((r) => { const lv = trust.get(r.id).level; byTrust[lv] = (byTrust[lv] || 0) + 1; });
+  trustLevels(recs, S.trust).forEach(({ level }) => { byTrust[level] = (byTrust[level] || 0) + 1; });
   $("#summary").innerHTML = `<table class="sum"><tr><th>${esc(t("species"))}</th><th></th></tr>${rows(s.bySpecies, "sp_short_")}
     <tr><th>${esc(t("trust_title"))}</th><th></th></tr>${rows(byTrust, "trust_")}
     ${Object.keys(s.nests).length ? `<tr><th>${esc(t("nests_by_status"))}</th><th></th></tr>${rows(s.nests, "st_")}` : ""}</table>
     <p class="hint">${esc(t("records_n", { n: s.total }))}</p>`;
 }
 
-async function importFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const incoming = fromGeoJSON(JSON.parse(await file.text())).filter((r) => !validate(r).length);
-    const m = mergeRecords(S.records, incoming);
-    await put("records", m.records);
-    S.records = m.records;
-    $("#imp-msg").textContent = t("imported", { a: m.added, u: m.updated });
-    renderMarkers();
-    renderSummary();
-  } catch (err) {
-    $("#imp-msg").textContent = t("import_fail", { e: err.message });
-  }
-  e.target.value = "";
-}
-
 async function deleteAll() {
   if (!confirm(t("confirm_delete_all"))) return;
   await clearAll();
-  S.records = [];
+  S.outbox = [];
   S.stations = [];
   S.photosOn = false;
+  S.consent = null;
   applyText();
   $("#del-msg").textContent = t("deleted_all");
+  openConsent();
 }
 
 // ---------- wiring ----------
 function wireSettings() {
-  $("#lang").innerHTML = Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === S.lang ? "selected" : ""}>${v}</option>`).join("");
-  $("#lang").onchange = (e) => {
+  const langOpts = Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === S.lang ? "selected" : ""}>${v}</option>`).join("");
+  $("#lang").innerHTML = $("#consent-lang").innerHTML = langOpts;
+  const setLang = (e) => {
     S.lang = e.target.value;
     setSetting("lang", S.lang);
     t = makeT(S.lang);
+    $("#lang").value = $("#consent-lang").value = S.lang;
     renderRegions();
     applyText();
   };
+  $("#lang").onchange = setLang;
+  $("#consent-lang").onchange = setLang;
   renderRegions();
   $("#region").onchange = (e) => {
     S.region = e.target.value;
@@ -736,7 +668,7 @@ function onDocClick(e) {
     renderFilters();
     renderMarkers();
   }
-  onPopupAction(e);
+  if (e.target.closest("[data-consent-open]")) openConsent();
   onStationAction(e);
 }
 
@@ -762,20 +694,12 @@ function wireReport() {
   };
   $("#btn-pick").onclick = () => startPick("report");
   $("#pick-cancel").onclick = () => endPick(true);
-  $("#photo").onchange = async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    S.photo = await resizePhoto(f);
-    $("#photo-preview").src = S.photo;
-    $("#photo-preview").hidden = false;
-  };
+  $("#consent-check").onchange = (e) => { $("#consent-accept").disabled = !e.target.checked; };
+  $("#consent-accept").onclick = () => setConsent(true);
+  $("#consent-decline").onclick = () => setConsent(false);
 }
 
 function wireData() {
-  $("#exp-full").onclick = () => download(`vespa-records-${stamp()}.geojson`, JSON.stringify(toGeoJSON(S.records, { photos: true })), "application/geo+json");
-  $("#exp-public").onclick = () => download(`vespa-public-${stamp()}.geojson`, JSON.stringify(toGeoJSON(S.records, { decimals: 3 })), "application/geo+json");
-  $("#exp-csv").onclick = () => download(`vespa-records-${stamp()}.csv`, toCSV(S.records), "text/csv");
-  $("#imp").onchange = importFile;
   $("#del-all").onclick = deleteAll;
   $("#install").onclick = async () => {
     if (!S.install) return;
@@ -792,10 +716,8 @@ function wire() {
   wireReport();
   wireData();
   document.addEventListener("click", onDocClick);
-  document.addEventListener("change", onStatusChange);
   document.addEventListener("error", onRemoteImgError, true);
   $("#map-load").onclick = loadBaseMap;
-  $("#community-load").onclick = loadCommunityLayer;
   $("#add-station").onclick = () => {
     S.stations.push({ id: "s" + Date.now().toString(36), lat: null, lon: null, bearings: [], times: [], startedAt: null });
     saveStations();
@@ -813,13 +735,21 @@ function wire() {
   });
 }
 
+// Reports saved by older versions (and any unsent report) are in the outbox; old stations are discarded.
+async function loadOutbox() {
+  S.outbox = await all("records");
+  (await all("stations")).forEach((st) => remove("stations", st.id));
+}
+
 async function init() {
   wire();
-  [S.records, S.stations] = await Promise.all([all("records"), all("stations")]);
+  await loadOutbox();
   applyText();
   goto((location.hash || "").slice(1) || "report");
-  syncPending();
-  window.addEventListener("online", syncPending);
+  if (S.consent === null) openConsent();
+  if (S.consent === true) flushOutbox().then(refreshCommunity);
+  window.addEventListener("online", flushOutbox);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && S.outbox.length) flushOutbox(); });
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("sw.js").then(() => {
       $("#sw-msg").textContent = t("offline_ready");

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS reports (
   lon REAL NOT NULL,
   count INTEGER,
   nest_status TEXT,
-  del_hash TEXT NOT NULL        -- SHA-256 of the reporter's private delete token
+  del_hash TEXT NOT NULL        -- unused since 2026-11-10 (always empty); kept for compatibility
 );
 CREATE INDEX IF NOT EXISTS reports_created ON reports (created);
 

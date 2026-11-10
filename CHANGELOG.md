@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-10 (6)
+
+- Reports are no longer stored on the phone: they upload automatically to the open map. Unsent reports wait in an outbox
+  only until they are uploaded (retried when the connection returns or the app is reopened), then are deleted from the phone.
+- First-use consent sheet (es/en, language selector) explaining what is sent, that it is public (CC BY 4.0) and cannot be withdrawn,
+  that a rounded location can still point to a home, and a note for under-14s. Declining keeps the guide, map and nest finding.
+- Removed: photo, notes, nest place and height from the form (not part of the open dataset yet); export/import of own records;
+  withdrawal of shared reports; nest-status editing. Bait stations live in memory only.
+- Server: accepts "not sure" species; no withdrawal tokens or DELETE route. Needs `npx wrangler deploy`.
+
 ## 2026-11-10 (5)
 
 - Open-data server deployed at https://vespa-control-api.vespacontrol.workers.dev (Cloudflare Free plan, D1 in Western Europe); community features switched on.

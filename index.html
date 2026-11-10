@@ -25,6 +25,11 @@
   <main>
     <!-- 1. Report -->
     <section id="tab-report" class="tab" data-tab="report">
+      <div class="card" id="report-locked" hidden>
+        <p data-i18n="consent_locked"></p>
+        <button type="button" class="btn primary wide" data-consent-open data-i18n="consent_review"></button>
+      </div>
+      <p class="alert warn" id="outbox" hidden></p>
       <form id="report-form" novalidate>
         <fieldset>
           <legend data-i18n="type"></legend>
@@ -49,18 +54,9 @@
         </fieldset>
         <div id="nest-fields" hidden>
           <label><span data-i18n="nest_status"></span><select name="nest_status" id="nest-status"></select></label>
-          <label><span data-i18n="nest_setting"></span><select name="nest_setting" id="nest-setting"></select></label>
-          <label><span data-i18n="height"></span><input name="height_m" type="number" inputmode="decimal" min="0" max="60" step="0.5"></label>
         </div>
         <label id="count-field"><span data-i18n="count"></span><input name="count" type="number" inputmode="numeric" min="0" step="1"></label>
-        <label><span data-i18n="photo"></span><input name="photo" id="photo" type="file" accept="image/*" capture="environment"></label>
-        <p class="hint photo-note" data-i18n="photo_note"></p>
-        <img id="photo-preview" alt="" hidden>
-        <label><span data-i18n="notes"></span><textarea name="notes" rows="3" data-i18n-ph="notes_ph"></textarea></label>
-        <div class="share-box" data-community hidden>
-          <label class="check"><input type="checkbox" name="share" value="1"><span data-i18n="share_label"></span></label>
-          <p class="hint" data-i18n="share_note"></p>
-        </div>
+        <p class="hint" data-i18n="send_note"></p>
         <div id="form-errors" class="alert err" hidden></div>
         <button type="submit" class="btn primary wide" data-i18n="save"></button>
         <div id="form-ok" class="alert ok" hidden data-i18n="saved"></div>
@@ -77,13 +73,7 @@
         <div class="row"><button type="button" class="btn" id="map-load" data-i18n="map_load"></button></div>
         <label class="check"><input type="checkbox" id="map-remember"><span data-i18n="map_remember"></span></label>
       </div>
-      <div class="card consent" id="community-consent" hidden>
-        <h3 data-i18n="community_title"></h3>
-        <p class="hint" data-i18n="community_text"></p>
-        <div class="row"><button type="button" class="btn" id="community-load" data-i18n="community_load"></button></div>
-        <label class="check"><input type="checkbox" id="community-remember"><span data-i18n="map_remember"></span></label>
-      </div>
-      <p class="hint" id="community-msg" data-community hidden></p>
+      <p class="hint" id="community-msg"></p>
       <div class="filters" id="map-filters"></div>
       <div class="filters" id="trust-filters"></div>
       <div id="map"></div>
@@ -194,16 +184,6 @@
         <label><span data-i18n="trust_days"></span><input id="trust-days" type="number" inputmode="numeric" min="1" max="730" step="1"></label>
       </div>
       <div class="card">
-        <h2 data-i18n="data_title"></h2>
-        <div class="stack">
-          <button type="button" class="btn" id="exp-full" data-i18n="export_full"></button>
-          <button type="button" class="btn" id="exp-public" data-i18n="export_public"></button>
-          <button type="button" class="btn" id="exp-csv" data-i18n="export_csv"></button>
-          <label class="btn ghost file"><span data-i18n="import"></span><input type="file" id="imp" accept=".geojson,.json,application/geo+json,application/json"></label>
-        </div>
-        <p id="imp-msg" class="hint"></p>
-      </div>
-      <div class="card" data-community hidden>
         <h2 data-i18n="dataset_title"></h2>
         <p class="hint" data-i18n="dataset_text"></p>
         <div class="row"><a class="btn" id="dl-geojson" target="_blank" rel="noopener noreferrer" data-i18n="dataset_geojson"></a>
@@ -211,6 +191,8 @@
       </div>
       <div class="card">
         <h2 data-i18n="privacy_title"></h2>
+        <p id="consent-status"></p>
+        <button type="button" class="btn wide" data-consent-open data-i18n="consent_review"></button>
         <ul data-i18n-list="privacy_points"></ul>
         <button type="button" class="btn danger wide" id="del-all" data-i18n="delete_all"></button>
         <p id="del-msg" class="hint"></p>
@@ -227,6 +209,18 @@
     <button data-goto="find" data-mode="tech"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span data-i18n="tab_find"></span></button>
     <button data-goto="data"><svg viewBox="0 0 24 24"><path d="M4 6c0-2 16-2 16 0v12c0 2-16 2-16 0zM4 6c0 2 16 2 16 0M4 12c0 2 16 2 16 0"/></svg><span data-i18n="tab_data"></span></button>
   </nav>
+
+  <div class="modal" id="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title" hidden>
+    <div class="sheet">
+      <div class="sheet-top"><h2 id="consent-title" data-i18n="consent_title"></h2>
+        <select id="consent-lang" aria-label="Idioma / Language"></select></div>
+      <p data-i18n="consent_intro"></p>
+      <ul data-i18n-list="consent_points"></ul>
+      <label class="check"><input type="checkbox" id="consent-check"><span data-i18n="consent_check"></span></label>
+      <button type="button" class="btn primary wide" id="consent-accept" data-i18n="consent_accept" disabled></button>
+      <button type="button" class="btn ghost wide" id="consent-decline" data-i18n="consent_decline"></button>
+    </div>
+  </div>
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script type="module" src="src/app.js"></script>

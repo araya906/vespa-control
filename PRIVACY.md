@@ -1,45 +1,50 @@
 # Privacy
 
-VespaControl collects the minimum needed to record a hornet or nest, and keeps it on your phone.
+VespaControl builds an **open public map** of Asian and oriental hornets. Reports are uploaded automatically and are public;
+nothing about the reports is kept on the phone once they are sent. On first use the app asks for explicit consent
+(Spanish first, also in English). Without consent, nothing is sent: the guide, the map and nest finding still work.
 
-## What the app stores, and where
+## What is sent, and where
 
-| Data | When | Where |
-|---|---|---|
-| Records (type, species, location, count, nest details, notes, photo) | When you tap Save | On this device only (IndexedDB) |
-| Bait stations (location, directions, times) | Technician profile, when you add them | On this device only |
-| Settings (language, region, profile, opt-ins) | When you change them | On this device only (localStorage) |
+When you save a report, the app sends to the VespaControl open-data server
+(a Cloudflare Worker at `https://vespa-control-api.vespacontrol.workers.dev`, database in Western Europe), and only:
 
-There are no accounts, no analytics, no ads and no cookies. "Delete all my data" in the Data tab erases everything.
+| Field | Detail |
+|---|---|
+| id | random, generated for the report (not linked to you or your phone) |
+| type | sighting, nest, attack on hives, trap catch |
+| species | Asian hornet, oriental hornet, European hornet, not sure |
+| count, nest status | as entered |
+| time | rounded to the hour |
+| location | rounded to 3 decimals (~100 m) |
+
+Never sent: name, account, contacts, photos, notes, device data, exact location or exact time.
+
+Reports are **public open data (CC BY 4.0)**: anybody can see and download them. Once sent, they cannot be withdrawn from the app.
+A location, even rounded, can point to a home or a property.
+
+The server does not store IP addresses. To stop abuse it keeps a salted hash of (day, IP) with a counter, deleted the next day.
+
+## What stays on the phone
+
+- **Unsent reports only**, while there is no connection. They are deleted from the phone as soon as they are uploaded.
+- Settings: language, region, profile, reliability filter values, opt-ins and your consent answer.
+- Nothing else: bait stations (technician profile) live only in memory during the session.
+
+"Delete settings and pending reports from this device" (Data tab) erases all of it and asks for consent again.
 
 ## Device permissions
 
 - **Location**: read once, only when you tap "Use my location". Never tracked in the background.
-- **Camera / photos**: only when you choose a photo. The photo is re-encoded on the device, which removes its metadata (GPS position, phone model, date).
 - **Compass**: read once, only when you tap "Use phone compass" (technician profile).
+- No camera, contacts, files or other sensors.
 
-## Network requests
+## Other network requests
 
 - The app's own files, from the address you installed it from.
+- The open-data server: uploads (above) and downloading everybody's reports for the map (your IP is seen, not stored).
 - **Only if you tap "Load base map"**: map tiles from CARTO (`*.basemaps.cartocdn.com`, OpenStreetMap data) and Esri (`server.arcgisonline.com`). Those servers see your IP address and the area you view.
-- **Only if you tap "Show real photos"**: the app asks the Wikimedia Commons API (`commons.wikimedia.org`) for a fixed list of reference photos and their author/licence, then loads the images (`upload.wikimedia.org`). Wikimedia sees your IP address; nothing about you or your records is sent.
-- Links to official sites (BOE, MITECO, licences) open only when you tap them.
+- **Only if you tap "Show real photos"**: the Wikimedia Commons API (`commons.wikimedia.org`) for a fixed list of reference photos and their credits, then the images (`upload.wikimedia.org`). Wikimedia sees your IP address.
+- Links to official sites open only when you tap them.
 
-These are the only external hosts allowed by the app's Content-Security-Policy. The app cannot send your records anywhere: `connect-src` allows only the app's own origin, the Commons photo API (photo titles only) and the VespaControl open-data server (only what is listed above).
-
-## Sharing on the public map (optional)
-
-Only if you tick "Share this report on the open public map" (or tap "Share" on a saved report), the app sends to the
-VespaControl open-data server (a Cloudflare Worker at `https://vespa-control-api.vespacontrol.workers.dev`): a random report id, species, type, observation time rounded to the hour,
-count, nest status and the location rounded to about 100 m, plus a private random key that lets only your phone withdraw it.
-Never the photo, notes, device data or any identifier. Reports with an unsure species are never shared.
-
-The server does not store IP addresses. To stop abuse it keeps a salted hash of (day, IP) with a counter, deleted the next day.
-Shared reports are public open data (CC BY 4.0) that anybody can download. You can withdraw a report at any time with
-"Stop sharing" (deleting a shared report also withdraws it).
-
-**Only if you tap "Load community reports"**: the app downloads the shared reports; the server sees your IP address and nothing else.
-
-## Exports
-
-"Export for sharing" rounds locations to about 100 m and drops photos. Exports never include the private withdrawal key.
+These are the only external hosts allowed by the app's Content-Security-Policy.

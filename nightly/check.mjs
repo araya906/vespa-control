@@ -104,7 +104,18 @@ function chkPrivacy() {
   const loadFn = app.match(/function loadBaseMap\(\) \{[\s\S]*?\n\}/)?.[0] || "";
   const guarded = calls.filter((l) => /getSetting\("tiles_ok"/.test(l)).length;
   check("chk_tiles_opt_in", calls.length === guarded + 1 && /addBaseLayers\(\);/.test(loadFn), calls.join(" | "));
-  check("chk_photo_metadata_stripped", /toDataURL\("image\/jpeg"/.test(read("src/app.js")));
+  // No photo capture while photos are not part of the open dataset.
+  check("chk_no_file_capture", !/type="file"/.test(html) && !/capture=/.test(html));
+  // Reports touch the phone's storage only as an outbox: put before upload, removed right after.
+  const appSrc = read("src/app.js");
+  const puts = (appSrc.match(/\bput\("records"/g) || []).length;
+  const send = appSrc.match(/async function sendOne\([\s\S]*?\n\}/)?.[0] || "";
+  check("chk_outbox_only", puts === 1 && /queueAndSend[\s\S]*put\("records"/.test(appSrc) && /uploadRecord\(r\);\s*\n\s*await remove\("records"/.test(send)
+    && !/put\("stations"/.test(appSrc), `puts=${puts}`);
+  // Nothing is uploaded without consent.
+  const uploads = (appSrc.match(/uploadRecord\(/g) || []).length;
+  check("chk_consent_gate", uploads === 1 && /S\.consent !== true\) return false/.test(send)
+    && /async function saveReport[\s\S]*?if \(S\.consent !== true\) return openConsent\(\)/.test(appSrc));
 }
 
 function chkFunctionSize() {
@@ -176,20 +187,19 @@ async function chkOpenData() {
   const c = await load("src/community.js");
   const r = await load("src/records.js");
   const rec = r.makeRecord({ type: "nest", species: "velutina", lat: 43.123456, lon: -2.987654, notes: "my garden, Calle X 3",
-    photo: "data:image/jpeg;base64,xx", nest_status: "active", created: "2026-08-01T10:37:12.000Z", share_token: "t".repeat(48) });
-  const p = c.publicPayload(rec, "a".repeat(48));
+    photo: "data:image/jpeg;base64,xx", nest_status: "active", created: "2026-08-01T10:37:12.000Z" });
+  const p = c.publicPayload(rec);
   const keys = Object.keys(p).sort().join(",");
-  check("chk_share_minimal", keys === "count,created,id,lat,lon,nest_status,species,token,type" && p.lat === 43.123 && p.lon === -2.988
+  check("chk_share_minimal", keys === "count,created,id,lat,lon,nest_status,species,type" && p.lat === 43.123 && p.lon === -2.988
     && p.created === "2026-08-01T10:00:00.000Z", keys);
-  const fc = r.toGeoJSON([rec], { photos: true });
-  check("chk_export_never_has_token", !("share_token" in fc.features[0].properties) && !r.toCSV([rec]).includes("t".repeat(48)));
   const s = await load("server/src/index.js");
   const now = Date.parse("2026-11-10T12:00:00Z");
   const good = { ...p, created: "2026-11-09T08:15:00Z" };
   const okRow = s.clean(good, now);
-  const rejects = [{ ...good, species: "unsure" }, { ...good, created: "2027-01-01T00:00:00Z" }, { ...good, lat: 91 },
-    { ...good, token: "short" }, { ...good, type: "x" }, { ...good, count: -1 }].map((b) => s.clean(b, now));
-  check("chk_server_validation", okRow?.lat === 43.123 && okRow.created === "2026-11-09T08:00:00Z" && !("token" in okRow)
+  const rejects = [{ ...good, species: "x" }, { ...good, created: "2027-01-01T00:00:00Z" }, { ...good, lat: 91 },
+    { ...good, id: "bad id!" }, { ...good, type: "x" }, { ...good, count: -1 }].map((b) => s.clean(b, now));
+  const unsure = s.clean({ ...good, species: "unsure" }, now);
+  check("chk_server_validation", okRow?.lat === 43.123 && okRow.created === "2026-11-09T08:00:00Z" && unsure?.species === "unsure"
     && !("notes" in okRow) && rejects.every((x) => x === null));
 }
 

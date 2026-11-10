@@ -15,7 +15,9 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 ## Next
 
-- [ ] Open data follow-up (only after `API_BASE` is set): show community reports count in the Data summary; let technicians filter the community layer by date range; cache the last downloaded community layer on the device for offline viewing.
+- [ ] Waiting for the owner's decision (do not start): which extra fields join the open dataset (photo, notes, nest place, height, exact location for authorities).
+- [ ] Technician nest updates on the server: mark a nest as reported/treated/removed without accounts (design note first: how to avoid vandalism, e.g. a technician code issued by the owner).
+- [ ] Map: let technicians filter community reports by date range; refresh button with last-updated time.
 
 - [ ] Catalan (`ca`): full translation of `src/lang/es.js` into `src/lang/ca.js`, register in `LANGS`, note "pending native-speaker review" in README.
 - [ ] Galician (`gl`): same as above.
