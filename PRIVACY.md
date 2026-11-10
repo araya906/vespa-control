@@ -30,7 +30,7 @@ These are the only external hosts allowed by the app's Content-Security-Policy. 
 ## Sharing on the public map (optional)
 
 Only if you tick "Share this report on the open public map" (or tap "Share" on a saved report), the app sends to the
-VespaControl open-data server (a Cloudflare Worker): a random report id, species, type, observation time rounded to the hour,
+VespaControl open-data server (a Cloudflare Worker at `https://vespa-control-api.vespacontrol.workers.dev`): a random report id, species, type, observation time rounded to the hour,
 count, nest status and the location rounded to about 100 m, plus a private random key that lets only your phone withdraw it.
 Never the photo, notes, device data or any identifier. Reports with an unsure species are never shared.
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-10 (5)
+
+- Open-data server deployed at https://vespa-control-api.vespacontrol.workers.dev (Cloudflare Free plan, D1 in Western Europe); community features switched on.
+
 ## 2026-11-10 (4)
 
 - Open data: opt-in "share on the public map" per report (minimal, rounded, withdrawable), community reports layer (opt-in),
