@@ -10,7 +10,8 @@ VespaControl is a mobile-first web app (PWA, Android first) for Spain. It helps 
 a nest or are stung, and helps technicians and researchers find and eradicate nests.
 
 - Users: general public (default profile), beekeepers, council/regional technicians, researchers (technician profile).
-- Languages, in priority order: **Spanish (source text, default)**, English, then Catalan, Galician, Basque (co-official), then Aranese.
+- Languages, in priority order: **Spanish (source text, default)**, English, then Basque (owner focus on the Basque Country), Catalan, Galician, then Aranese.
+- Market focus: the Basque Country first (Diputaciones Forales of Araba, Bizkaia and Gipuzkoa, fire services, municipalities, beekeeper associations).
 - No build step: plain HTML + CSS + ES modules. Leaflet is vendored in `vendor/leaflet/`.
 
 ## Setup

@@ -18,7 +18,16 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [ ] **"This report does not reach the authorities" message (do first, small).** After every saved report, and in the send note,
   say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
   with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English.
-- [ ] **Regional directory with automatic "who to warn" by location.** Owner priority (2026-11-10).
+- [ ] **Basque (`eu`) translation** (owner focus on the Basque Country, 2026-11-10): full translation of `src/lang/es.js` into `src/lang/eu.js`,
+  register it in `LANGS` right after Spanish, note "pending native-speaker review" in README. Use the official Basque names of places and bodies
+  (Bizkaiko Foru Aldundia, Gipuzkoako Foru Aldundia, Arabako Foru Aldundia, Eusko Jaurlaritza) and *liztor asiarra* / *liztor ekialdekoa* only if
+  confirmed in official Basque sources; otherwise keep the scientific name next to the Basque text.
+- [ ] **Regional directory with automatic "who to warn" by location.** Owner priority (2026-11-10). **Start with the Basque Country**
+  (Araba, Bizkaia, Gipuzkoa, each with its Diputación Foral programme and fire services), then the rest.
+  Already found on an official source (re-verify during the run, then use): Araba — Diputación Foral de Álava document "Vespa velutina Araban 2012-2024"
+  (https://web.araba.eus/documents/d/araba/vespa-velutina-araban_2012_2024-web-pdf): Vitoria-Gasteiz urban or urgent cases, Bomberos de Vitoria-Gasteiz;
+  rest of Álava, CECO Miñones; SOS Deiak 112 as alternative (take the phone numbers from that document). Bizkaia: protocol page on bizkaia.eus
+  ("Protocolo de actuación frente a la Avispa Asiática"); Gipuzkoa: find the Diputación's official page.
   - Data: for each of the 17 autonomous communities, Ceuta and Melilla, and the provinces where the programme is provincial
     (e.g. the three Basque Diputaciones), the official way to report a nest or a sighting: phone (e.g. 012), official app (e.g. avisAP in Asturias),
     web form or email, and whether it covers V. velutina, V. orientalis or both. Each entry verified on an official site during the run,
@@ -31,6 +40,9 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
     call (`tel:`), open the official app or web, or a pre-filled email/message (`mailto:` / Web Share) with species, type, date and a map link.
     The app never sends anything to the authority by itself.
   - Region picker in Datos sorted by name; default from the last lookup, otherwise Spain.
+- [ ] **Official nests layer for Bizkaia (research first).** Open Data Euskadi publishes a dataset "Avispa asiática en Bizkaia". Check its licence,
+  fields and update frequency; if the licence allows it, show it as a separate, clearly labelled "official data" layer (bundled at build time
+  by an owner-run script like `tools/fetch_photos.mjs`, so the app makes no extra request), and use it to avoid duplicate reports of nests already handled.
 - [ ] **Open feed for authorities (server item, owner deploys).** `GET /reports?bbox=` and `?province=` filters, and an Atom/RSS feed per province,
   so councils and regional services can follow new reports without accounts. Document it in `server/README.md`.
 - [ ] **Server: on-site photo + message** (server change authorised by this item; the owner deploys).
@@ -65,7 +77,6 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 - [ ] Catalan (`ca`): full translation of `src/lang/es.js` into `src/lang/ca.js`, register in `LANGS`, note "pending native-speaker review" in README.
 - [ ] Galician (`gl`): same as above.
-- [ ] Basque (`eu`): same as above.
 - [ ] Share a report without a server: Web Share API (fallback: copy text) with species, type, date and a map link; user chooses exact or ~100 m location; no photo by default.
 - [ ] "Where to look" scene illustration (house eaves, shed, hedge, tall tree, ground hole) with numbered hotspots linked to the guide text.
 - [ ] Interactive ID key: 4-6 yes/no questions (abdomen colour, leg tips, face colour, size, nest place) that end in a species suggestion and link to the species card.

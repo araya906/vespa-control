@@ -9,7 +9,7 @@ Mobile app (installable web app, Android first) to report, identify and help era
 - **Open data**: every report is public (minimal fields, location rounded to ~100 m, time to the hour) and anybody can download the dataset (CC BY 4.0). Server: [`server/`](server/README.md), Cloudflare Free plan.
 - **Privacy**: no accounts or tracking; explicit consent on first use. See [PRIVACY.md](PRIVACY.md).
 
-Languages: Spanish (default), English. Catalan, Galician and Basque are on the [roadmap](ROADMAP.md).
+Languages: Spanish (default), English. Basque, Catalan and Galician are on the [roadmap](ROADMAP.md). First focus: the Basque Country.
 
 ## Run it
 
