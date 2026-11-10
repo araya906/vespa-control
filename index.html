@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f2a1c">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://commons.wikimedia.org https://upload.wikimedia.org; connect-src 'self'; font-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+  <title>VespaControl</title>
+  <meta name="description" content="Avisos y localización de nidos de avispa asiática y avispón oriental. Sin cuentas ni seguimiento: los datos se quedan en tu móvil.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top">
+    <img src="img/icon.svg" alt="" width="32" height="32">
+    <div class="titles"><h1 data-i18n="app_title">VespaControl</h1><p data-i18n="app_sub"></p></div>
+    <button type="button" class="sos-btn" data-sos><b>112</b> <span data-i18n="sos_btn"></span></button>
+    <select id="lang" aria-label="Idioma / Language"></select>
+  </header>
+
+  <main>
+    <!-- 1. Report -->
+    <section id="tab-report" class="tab" data-tab="report">
+      <form id="report-form" novalidate>
+        <fieldset>
+          <legend data-i18n="type"></legend>
+          <div class="seg" id="type-seg"></div>
+        </fieldset>
+        <div id="nest-safety" class="alert warn" hidden data-i18n="safety_nest"></div>
+        <fieldset>
+          <legend data-i18n="species"></legend>
+          <div class="choices" id="species-choices"></div>
+          <p class="hint"><a href="#guide" data-goto="guide" data-i18n="id_help"></a></p>
+        </fieldset>
+        <fieldset>
+          <legend data-i18n="location"></legend>
+          <div class="row">
+            <button type="button" class="btn" id="btn-gps" data-i18n="use_gps"></button>
+            <button type="button" class="btn ghost" id="btn-pick" data-i18n="pick_map"></button>
+          </div>
+          <div class="inline paste"><input id="loc-paste" inputmode="text" autocomplete="off" data-i18n-ph="paste_loc">
+            <button type="button" class="btn small" id="btn-paste" data-i18n="use_paste"></button></div>
+          <p class="loc" id="loc-text" data-i18n="no_location"></p>
+          <p class="hint" data-i18n="gps_note"></p>
+        </fieldset>
+        <div id="nest-fields" hidden>
+          <label><span data-i18n="nest_status"></span><select name="nest_status" id="nest-status"></select></label>
+          <label><span data-i18n="nest_setting"></span><select name="nest_setting" id="nest-setting"></select></label>
+          <label><span data-i18n="height"></span><input name="height_m" type="number" inputmode="decimal" min="0" max="60" step="0.5"></label>
+        </div>
+        <label id="count-field"><span data-i18n="count"></span><input name="count" type="number" inputmode="numeric" min="0" step="1"></label>
+        <label><span data-i18n="photo"></span><input name="photo" id="photo" type="file" accept="image/*" capture="environment"></label>
+        <p class="hint photo-note" data-i18n="photo_note"></p>
+        <img id="photo-preview" alt="" hidden>
+        <label><span data-i18n="notes"></span><textarea name="notes" rows="3" data-i18n-ph="notes_ph"></textarea></label>
+        <div id="form-errors" class="alert err" hidden></div>
+        <button type="submit" class="btn primary wide" data-i18n="save"></button>
+        <div id="form-ok" class="alert ok" hidden data-i18n="saved"></div>
+      </form>
+    </section>
+
+    <!-- 2. Map -->
+    <section id="tab-map" class="tab" data-tab="map" hidden>
+      <div class="pick-banner" id="pick-banner" hidden><span data-i18n="pick_banner"></span>
+        <button type="button" class="btn small ghost" id="pick-cancel" data-i18n="cancel"></button></div>
+      <div class="card consent" id="map-consent" hidden>
+        <h3 data-i18n="map_consent_title"></h3>
+        <p class="hint" data-i18n="map_consent_text"></p>
+        <div class="row"><button type="button" class="btn" id="map-load" data-i18n="map_load"></button></div>
+        <label class="check"><input type="checkbox" id="map-remember"><span data-i18n="map_remember"></span></label>
+      </div>
+      <div class="filters" id="map-filters"></div>
+      <div id="map"></div>
+      <p class="hint" id="map-count"></p>
+    </section>
+
+    <!-- 3. Guide -->
+    <section id="tab-guide" class="tab" data-tab="guide" hidden>
+      <article class="card sos" id="g-emergency">
+        <h2 data-i18n="g_emergency_title"></h2>
+        <a class="btn sos-call wide" href="tel:112"><b>112</b> · <span data-i18n="g_call112"></span></a>
+        <h3 data-i18n="g_when112"></h3>
+        <ul data-i18n-list="g_signs"></ul>
+        <details><summary data-i18n="g_attack_title"></summary><ol data-i18n-list="g_attack_steps"></ol></details>
+        <details><summary data-i18n="g_sting_title"></summary><ol data-i18n-list="g_sting_steps"></ol>
+          <p class="dont" data-i18n="g_sting_dont"></p></details>
+      </article>
+
+      <details class="card g" id="g-wasp"><summary data-i18n="g_wasp_title"></summary>
+        <ol data-i18n-list="g_wasp_steps"></ol></details>
+
+      <details class="card g" id="g-nest"><summary data-i18n="g_nest_title"></summary>
+        <div class="alert warn" data-i18n="safety_nest"></div>
+        <ol data-i18n-list="g_nest_steps"></ol></details>
+
+      <details class="card g" id="g-identify"><summary data-i18n="id_title"></summary>
+        <p class="hint" data-i18n="id_note"></p>
+        <article class="card sp sp-velutina"><h3 data-i18n="sp_velutina"></h3><div class="photos" data-photos="velutina"></div><p data-i18n="id_velutina"></p><p class="legal" data-legal="velutina"></p></article>
+        <article class="card sp sp-orientalis"><h3 data-i18n="sp_orientalis"></h3><div class="photos" data-photos="orientalis"></div><p data-i18n="id_orientalis"></p><p class="legal" data-legal="orientalis"></p></article>
+        <article class="card sp sp-crabro"><h3 data-i18n="sp_crabro"></h3><div class="photos" data-photos="crabro"></div><p data-i18n="id_crabro"></p><p class="legal" data-legal="crabro"></p></article>
+        <p class="hint" data-i18n="art_note"></p>
+        <div id="photos-optin">
+          <button type="button" class="btn small ghost" id="btn-photos" data-i18n="show_photos"></button>
+          <p class="hint" data-i18n="show_photos_note"></p>
+        </div>
+        <p data-i18n="id_lookalikes"></p>
+      </details>
+
+      <details class="card g" id="g-where"><summary data-i18n="g_where_title"></summary>
+        <div class="nests" id="nest-art"></div>
+        <h3 data-i18n="g_where_velutina_title"></h3><ul data-i18n-list="g_where_velutina"></ul>
+        <h3 data-i18n="g_where_orientalis_title"></h3><ul data-i18n-list="g_where_orientalis"></ul>
+        <h3 data-i18n="g_where_clues_title"></h3><ul data-i18n-list="g_where_clues"></ul>
+        <h3 data-i18n="g_calendar_title"></h3><div id="calendar"></div>
+        <p class="hint" data-i18n="cal_legend"></p>
+      </details>
+
+      <details class="card g" id="g-bees"><summary data-i18n="g_bees_title"></summary>
+        <ul data-i18n-list="g_bees_steps"></ul></details>
+
+      <details class="card g" id="g-tech" data-mode="tech"><summary data-i18n="g_tech_title"></summary>
+        <ul data-i18n-list="g_tech_steps"></ul></details>
+
+      <article class="card warn-card"><h3 data-i18n="safety_title"></h3><p data-i18n="safety_text"></p></article>
+      <article class="card"><h3 data-i18n="g_sources_title"></h3><ul id="sources" class="small"></ul></article>
+    </section>
+
+    <!-- 4. Find nest (technician mode) -->
+    <section id="tab-find" class="tab" data-tab="find" hidden>
+      <p data-i18n="find_intro"></p>
+      <details class="method"><summary>i</summary><p class="hint" data-i18n="find_method"></p></details>
+      <div id="stations"></div>
+      <button type="button" class="btn wide" id="add-station" data-i18n="add_station"></button>
+      <div class="card result">
+        <h2 data-i18n="result"></h2>
+        <p id="find-result" data-i18n="result_none"></p>
+        <div class="row">
+          <button type="button" class="btn" id="find-show" data-i18n="show_map" disabled></button>
+          <button type="button" class="btn ghost" id="find-save" data-i18n="save_suspect" disabled></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Data -->
+    <section id="tab-data" class="tab" data-tab="data" hidden>
+      <button type="button" class="btn primary wide" id="install" hidden data-i18n="install_btn"></button>
+      <div class="card">
+        <h2 data-i18n="summary"></h2>
+        <div id="summary"></div>
+      </div>
+      <div class="card">
+        <label><span data-i18n="region"></span><select id="region"></select></label>
+        <h3 data-i18n="report_to"></h3><p id="region-report"></p>
+        <h3 data-i18n="links"></h3><ul id="region-links"></ul>
+      </div>
+      <div class="card">
+        <h2 data-i18n="mode_title"></h2>
+        <div class="choices">
+          <label><input type="radio" name="mode" value="public"><span class="lbl" data-i18n="mode_public"></span></label>
+          <label><input type="radio" name="mode" value="tech"><span class="lbl" data-i18n="mode_tech"></span></label>
+        </div>
+        <p class="hint" data-i18n="mode_hint"></p>
+      </div>
+      <div class="card">
+        <h2 data-i18n="data_title"></h2>
+        <div class="stack">
+          <button type="button" class="btn" id="exp-full" data-i18n="export_full"></button>
+          <button type="button" class="btn" id="exp-public" data-i18n="export_public"></button>
+          <button type="button" class="btn" id="exp-csv" data-i18n="export_csv"></button>
+          <label class="btn ghost file"><span data-i18n="import"></span><input type="file" id="imp" accept=".geojson,.json,application/geo+json,application/json"></label>
+        </div>
+        <p id="imp-msg" class="hint"></p>
+      </div>
+      <div class="card">
+        <h2 data-i18n="privacy_title"></h2>
+        <ul data-i18n-list="privacy_points"></ul>
+        <button type="button" class="btn danger wide" id="del-all" data-i18n="delete_all"></button>
+        <p id="del-msg" class="hint"></p>
+      </div>
+      <p class="hint" data-i18n="install_hint"></p>
+      <p class="hint" id="sw-msg"></p>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button data-goto="report"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg><span data-i18n="tab_report"></span></button>
+    <button data-goto="map"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15"/></svg><span data-i18n="tab_map"></span></button>
+    <button data-goto="guide"><svg viewBox="0 0 24 24"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg><span data-i18n="tab_guide"></span></button>
+    <button data-goto="find" data-mode="tech"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><span data-i18n="tab_find"></span></button>
+    <button data-goto="data"><svg viewBox="0 0 24 24"><path d="M4 6c0-2 16-2 16 0v12c0 2-16 2-16 0zM4 6c0 2 16 2 16 0M4 12c0 2 16 2 16 0"/></svg><span data-i18n="tab_data"></span></button>
+  </nav>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
