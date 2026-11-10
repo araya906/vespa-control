@@ -43,7 +43,7 @@ The server does not store IP addresses. To stop abuse it keeps a salted hash of 
 
 - The app's own files, from the address you installed it from.
 - The open-data server: uploads (above) and downloading everybody's reports for the map (your IP is seen, not stored).
-- **Only if you tap "Load base map"**: map tiles from CARTO (`*.basemaps.cartocdn.com`, OpenStreetMap data) and Esri (`server.arcgisonline.com`). Those servers see your IP address and the area you view.
+- **Only if you tap "Load base map"**: map and aerial-photo tiles from Spain's National Geographic Institute (`www.ign.es`, CC BY 4.0 scne.es). That server sees your IP address and the area you view.
 - **Only if you tap "Show real photos"**: the Wikimedia Commons API (`commons.wikimedia.org`) for a fixed list of reference photos and their credits, then the images (`upload.wikimedia.org`). Wikimedia sees your IP address.
 - Links to official sites open only when you tap them.
 

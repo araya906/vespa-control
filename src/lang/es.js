@@ -104,7 +104,7 @@ export default {
   trust_radius: "Radio (m)",
   trust_days: "Ventana de tiempo (días)",
   map_consent_title: "Mapa base (opcional)",
-  map_consent_text: "Para ver calles o satélite, la app descarga imágenes de CARTO (OpenStreetMap) y Esri. Esos servidores verán tu dirección IP y la zona que miras. Sin mapa base, tus registros se muestran igualmente sobre fondo liso.",
+  map_consent_text: "Para ver el mapa o la foto aérea, la app descarga imágenes del Instituto Geográfico Nacional (IGN). Ese servidor verá tu dirección IP y la zona que miras. Sin mapa base, los avisos se muestran igualmente sobre fondo liso.",
   map_load: "Cargar mapa base",
   map_remember: "Recordar mi elección en este dispositivo",
   find_intro: "Método del cebo: pon un cebo donde comen las avispas, anota la dirección en que se van y cronometra cada ida y vuelta. Dos o tres estaciones alrededor de la zona acotan dónde está el nido.",
@@ -267,7 +267,7 @@ export default {
   photo_credit: "Foto",
   photo_offline: "Foto no disponible sin conexión",
   map_street: "Mapa",
-  map_sat: "Satélite",
+  map_sat: "Foto aérea (PNOA)",
   nests_by_status: "Nidos por estado",
   none: "Aún no hay registros.",
   offline_ready: "Listo para funcionar sin conexión."

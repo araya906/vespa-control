@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-10 (8)
+
+- Base map: CARTO now requires an API key, so the map and aerial photo come from Spain's IGN/CNIG (IGN Base and PNOA orthophoto,
+  free, CC BY 4.0 scne.es, no key). CSP and privacy texts updated; Esri removed. Coverage is Spain-focused.
+
 ## 2026-11-10 (7)
 
 - Fix: app could open frozen with no text after an update (new page with old cached code). The service worker is now

@@ -295,13 +295,12 @@ function ensureMap() {
 
 function addBaseLayers() {
   if (baseLayers) return;
-  const common = { referrerPolicy: "no-referrer" };
-  const street = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    ...common, maxZoom: 20, subdomains: "abcd", attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
-  });
-  const sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-    ...common, maxZoom: 19, attribution: "Imagery &copy; Esri, Maxar, Earthstar Geographics"
-  });
+  // Spain's national mapping agency (IGN/CNIG): free, open (CC BY 4.0 scne.es), no API key.
+  const ign = (service, layer) => `https://www.ign.es/wmts/${service}?service=WMTS&request=GetTile&version=1.0.0&Format=image/png`
+    + `&layer=${layer}&style=default&tilematrixset=GoogleMapsCompatible&TileMatrix={z}&TileRow={y}&TileCol={x}`;
+  const common = { referrerPolicy: "no-referrer", maxZoom: 19, attribution: "CC BY 4.0 scne.es &middot; Sistema Geogr&aacute;fico Nacional IGN" };
+  const street = L.tileLayer(ign("ign-base", "IGNBaseTodo"), common);
+  const sat = L.tileLayer(ign("pnoa-ma", "OI.OrthoimageCoverage"), { ...common, minZoom: 4 });
   street.addTo(map);
   baseLayers = L.control.layers({ [t("map_street")]: street, [t("map_sat")]: sat }, null, { position: "topright" }).addTo(map);
 }

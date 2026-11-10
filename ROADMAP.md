@@ -37,6 +37,8 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 ## Parked
 
+- Base map outside Spain: IGN covers Spain only; pick another free, no-key provider when the app is used in other countries.
+
 - Bundle real photos locally (offline, no Wikimedia request): needs a one-time download from the owner's computer; this environment cannot reach Wikimedia.
 
 - Android APK (Trusted Web Activity via Bubblewrap): needs the app hosted on HTTPS first and a signing key kept by the owner. Revisit when hosting is decided.

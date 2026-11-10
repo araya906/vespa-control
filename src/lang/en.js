@@ -104,7 +104,7 @@ export default {
   trust_radius: "Radius (m)",
   trust_days: "Time window (days)",
   map_consent_title: "Base map (optional)",
-  map_consent_text: "To show streets or satellite imagery, the app downloads images from CARTO (OpenStreetMap) and Esri. Those servers will see your IP address and the area you are looking at. Without a base map, your records are still shown on a plain background.",
+  map_consent_text: "To show the map or aerial photos, the app downloads images from Spain's National Geographic Institute (IGN). That server will see your IP address and the area you are looking at. Without a base map, reports are still shown on a plain background.",
   map_load: "Load base map",
   map_remember: "Remember my choice on this device",
   find_intro: "Bait-station method: put a bait where hornets feed, note the direction they fly off and time each round trip. Two or three stations around the area narrow down where the nest is.",
@@ -267,7 +267,7 @@ export default {
   photo_credit: "Photo",
   photo_offline: "Photo not available offline",
   map_street: "Map",
-  map_sat: "Satellite",
+  map_sat: "Aerial photo (PNOA)",
   nests_by_status: "Nests by status",
   none: "Nothing recorded yet.",
   offline_ready: "Ready to work offline."
