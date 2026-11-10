@@ -61,6 +61,10 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 - The nightly run cannot deploy it. Change `server/` only when a ROADMAP item says so; then say in the final report that the owner must run `cd server && npx wrangler deploy`, and keep the app working with the currently deployed server (backwards compatible).
 - Schema changes only as new `server/migrations/NNNN_*.sql` files, never destructive.
 
+**Licence:**
+- Code is AGPL-3.0-or-later; illustrations, texts and data CC BY 4.0 (`NOTICE.md`). Never change the licence, and never add code,
+  images or data under a licence that is incompatible with it; add any new third-party material to `NOTICE.md`.
+
 **Code and repo:**
 - Functions under 50 lines (`chk_functions_under_50_lines`). No new dependencies or build tools without a ROADMAP decision.
 - Synthetic data only; never read or reference real or local user data.

@@ -27,6 +27,11 @@ On Android: open the address in Chrome → ⋮ → *Install app*.
 - `server/`: open-data API (Cloudflare Worker + D1, Free plan).
 - `nightly/`: brief, checks (`node nightly/check.mjs`) and push gate for the nightly improvement run.
 
+## Licence
+
+Code: [GNU AGPL-3.0-or-later](LICENSE). Illustrations, guide texts and the open dataset: CC BY 4.0.
+Third-party material and commercial licensing: [NOTICE.md](NOTICE.md). Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Disclaimer
 
 Guidance only. In an emergency call 112. Nests must be removed by trained professionals.

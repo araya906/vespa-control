@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-10 (10)
+
+- Licence: code under GNU AGPL-3.0-or-later (`LICENSE`); illustrations, guide texts and the open dataset under CC BY 4.0.
+  `NOTICE.md` lists third-party material and the commercial-licence option; `CONTRIBUTING.md` explains the contributor terms.
+
 ## 2026-11-10 (9)
 
 - Reference photos are now bundled in the app (work offline, no request to Wikimedia when viewing, no opt-in button).
