@@ -41,7 +41,7 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
   or an image classifier. Alternative: small on-device model (open licence, adds MBs to the app).
   The note must cover: model and prompt, Neurons per photo vs. the daily budget with a hard daily cap in code (queue the rest for the next day),
   evaluation on openly licensed labelled images, failure handling. The AI never rejects or deletes a report; it only adds a suggestion and trust weight.
-- [ ] Owner decision pending (do not implement until written here): are photos and messages published in the open dataset, or used only for verification (trust, AI, technicians)?
+- Owner decision (2026-11-10): photos and messages are **never published** in the open dataset. They are stored only for verification (reliability weighting, AI check, technicians). The public dataset may only show `has_photo`, `has_message` and the AI result.
 - [ ] Technician nest updates on the server: mark a nest as reported/treated/removed without accounts (design note first: how to avoid vandalism, e.g. a technician code issued by the owner).
 - [ ] Map: let technicians filter community reports by date range; refresh button with last-updated time.
 
@@ -62,6 +62,8 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [ ] Researcher view: import several GeoJSON exports, merge, and show a simple spread summary (first/last record per area and month). Spread model only after a design note in this file.
 
 ## Parked
+
+- Advertising (checked 2026-11-10, not pursued): ad networks need a paid custom domain (AdSense does not approve `*.github.io`), a certified cookie-consent platform in the EU, and third-party tracking scripts, which break the privacy promise and the CSP; GitHub Pages may not be used to run an online business; ads next to emergency/first-aid content would hurt trust with authorities and beekeepers; expected revenue for a niche app is very low. Funding routes that fit instead: public grants (e.g. FECYT citizen-science line with a research partner and a beekeeper/civil-society partner), regional invasive-species programmes, institutional sponsorship shown as a plain logo without tracking, and donations.
 
 - Base map outside Spain: IGN covers Spain only; pick another free, no-key provider when the app is used in other countries.
 
