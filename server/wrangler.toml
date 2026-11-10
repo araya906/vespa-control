@@ -1,0 +1,12 @@
+name = "vespa-control-api"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://araya906.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vespa-control"
+database_id = "REPLACE_WITH_DATABASE_ID"

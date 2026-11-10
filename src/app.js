@@ -5,6 +5,8 @@ import { PHOTOS, commonsPhotos, ART, NEST_ART } from "./media.js";
 import { stationZone, zonePolygon, combineZones } from "./geo.js";
 import { all, put, remove, clearAll, getSetting, setSetting } from "./store.js";
 import { calendarHtml, sourcesHtml } from "./guide.js";
+import { communityEnabled, newToken, shareRecord, unshareRecord, loadCommunity } from "./community.js";
+import { API_BASE } from "./config.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -18,6 +20,8 @@ const S = {
   photosOn: getSetting("photos_ok", false),
   trust: { ...TRUST_DEFAULTS, ...getSetting("trust", {}) },
   minLevel: "unconfirmed",
+  community: [],
+  communityOn: getSetting("community_ok", false),
   records: [],
   stations: [],
   filter: "all",
@@ -48,6 +52,10 @@ function applyStatic() {
   $("#nest-art").innerHTML = NEST_ART.map((n) => `<figure><img src="${n.src}" alt="${esc(t(n.key))}" loading="lazy"><figcaption>${esc(t(n.key))}</figcaption></figure>`).join("");
   $$("[name=mode]").forEach((r) => { r.checked = r.value === S.mode; });
   $("#install").hidden = !S.install;
+  $$("[data-community]").forEach((el) => { el.hidden = !communityEnabled(); });
+  $("#community-consent").hidden = !communityEnabled() || S.community.length > 0;
+  $("#dl-geojson").href = API_BASE + "/reports";
+  $("#dl-csv").href = API_BASE + "/reports.csv";
   const tr = S.trust;
   $("#trust-hint").textContent = t("trust_hint", { x: tr.minReports, r: tr.radiusM, d: tr.days, m: tr.dedupeMin });
   [["min", "minReports"], ["radius", "radiusM"], ["days", "days"]].forEach(([id, k]) => { $("#trust-" + id).value = tr[k]; });
@@ -195,7 +203,8 @@ async function saveReport(ev) {
   const rec = makeRecord({
     type: S.type, species: f.get("species"), ...S.loc, count: f.get("count"),
     nest_status: f.get("nest_status"), nest_setting: f.get("nest_setting"), height_m: f.get("height_m"),
-    notes: f.get("notes"), photo: S.photo, region: S.region
+    notes: f.get("notes"), photo: S.photo, region: S.region,
+    ...(f.get("share") && communityEnabled() && f.get("species") !== "unsure" ? { shared: "pending", share_token: newToken() } : {})
   });
   const errs = validate(rec);
   $("#form-errors").hidden = !errs.length;
@@ -204,6 +213,57 @@ async function saveReport(ev) {
   await put("records", rec);
   S.records.push(rec);
   resetForm(ev.target);
+  if (rec.shared === "pending") syncShare(rec);
+}
+
+// ---------- open data (opt-in) ----------
+async function updateRecord(r, changes) {
+  Object.assign(r, changes);
+  await put("records", r);
+  renderMarkers();
+}
+
+async function syncShare(r) {
+  if (!communityEnabled() || r.shared !== "pending" || r.species === "unsure") return;
+  try {
+    await shareRecord(r);
+    await updateRecord(r, { shared: "yes" });
+  } catch {}
+}
+
+function syncPending() {
+  S.records.filter((r) => r.shared === "pending").forEach(syncShare);
+}
+
+async function unshare(r) {
+  try {
+    await unshareRecord(r);
+    await updateRecord(r, { shared: null, share_token: null });
+    return true;
+  } catch {
+    alert(t("unshare_fail"));
+    return false;
+  }
+}
+
+async function loadCommunityLayer() {
+  if (!communityEnabled()) return;
+  if ($("#community-remember").checked) setSetting("community_ok", true);
+  try {
+    S.community = await loadCommunity();
+    $("#community-msg").textContent = t("records_n", { n: S.community.length });
+  } catch {
+    $("#community-msg").textContent = t("community_fail");
+  }
+  $("#community-consent").hidden = S.community.length > 0;
+  renderMarkers();
+  renderSummary();
+}
+
+// Own records win over their community copy.
+function allRecords() {
+  const own = new Set(S.records.map((r) => r.id));
+  return [...S.records, ...S.community.filter((r) => !own.has(r.id))];
 }
 
 // ---------- map (base tiles are opt-in) ----------
@@ -216,6 +276,7 @@ function ensureMap() {
   findLayer = L.layerGroup().addTo(map);
   map.on("click", onMapClick);
   if (getSetting("tiles_ok", false)) addBaseLayers();
+  if (S.communityOn && !S.community.length) loadCommunityLayer();
   syncMapConsent();
   renderMarkers();
   drawFind();
@@ -252,10 +313,11 @@ function icon(r, tr) {
   const nest = r.type === "nest", gone = nest && (r.nest_status === "destroyed" || r.nest_status === "inactive");
   const color = gone ? "#9a9a9a" : `var(--sp-${r.species})`;
   const size = nest ? 22 : 16, shape = nest ? "border-radius:4px;transform:rotate(45deg)" : "border-radius:50%";
-  const border = tr.level === "unconfirmed" ? "2px dashed #fff" : "2px solid #fff";
+  const line = tr.level === "unconfirmed" ? "dashed" : "solid";
+  const fill = r.source === "community" ? `background:#fff;border:3px ${line} ${color}` : `background:${color};border:2px ${line} #fff`;
   return L.divIcon({
     className: "", iconSize: [size, size], iconAnchor: [size / 2, size / 2],
-    html: `<div style="width:${size}px;height:${size}px;background:${color};${shape};border:${border};opacity:${OPACITY[tr.level]};box-shadow:0 0 0 1px #0006"></div>`
+    html: `<div style="width:${size}px;height:${size}px;${fill};${shape};opacity:${OPACITY[tr.level]};box-shadow:0 0 0 1px #0006"></div>`
   });
 }
 
@@ -264,22 +326,34 @@ function trustLine(tr) {
   return `<span class="trust trust-${tr.level}">${esc(t("trust_title"))}: ${esc(t("trust_" + tr.level))}</span> <small>(${esc(detail)})</small>`;
 }
 
+function shareHtml(r) {
+  if (!communityEnabled() || r.source === "community" || r.species === "unsure") return "";
+  if (r.shared === "yes") return `<p class="hint">${esc(t("shared_yes"))} <button class="btn small ghost" data-unshare="${r.id}">${esc(t("unshare_btn"))}</button></p>`;
+  if (r.shared === "pending") return `<p class="hint">${esc(t("shared_pending"))}</p>`;
+  return `<button class="btn small" data-share="${r.id}">${esc(t("share_btn"))}</button>`;
+}
+
 function popupHtml(r, tr) {
   const when = new Date(r.created).toLocaleString(S.lang);
+  if (r.source === "community") {
+    return `<div class="popup"><b>${esc(t("type_" + r.type))}: ${esc(t("sp_short_" + r.species))}</b>
+      <span class="hint">${esc(t("community_tag"))}</span><br>${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}
+      <div>${trustLine(tr)}</div></div>`;
+  }
   const status = r.type === "nest" ? `<label>${esc(t("edit_status"))}<select data-status="${r.id}">${NEST_STATUS.map((x) => `<option value="${x}" ${x === r.nest_status ? "selected" : ""}>${esc(t("st_" + x))}</option>`).join("")}</select></label>` : "";
   return `<div class="popup"><b>${esc(t("type_" + r.type))}: ${esc(t("sp_short_" + r.species))}</b>
     ${esc(t("created"))}: ${esc(when)}${r.count ? ` &middot; n = ${r.count}` : ""}${r.height_m !== null ? ` &middot; ${r.height_m} m` : ""}
     <div>${trustLine(tr)}</div>
-    ${r.photo ? `<img src="${r.photo}" alt="">` : ""}${r.notes ? `<p>${esc(r.notes)}</p>` : ""}${status}
+    ${r.photo ? `<img src="${r.photo}" alt="">` : ""}${r.notes ? `<p>${esc(r.notes)}</p>` : ""}${status}${shareHtml(r)}
     <div class="row"><button class="btn small ghost" data-del="${r.id}">${esc(t("delete"))}</button></div></div>`;
 }
 
 function renderMarkers() {
   if (!markerLayer) return;
   markerLayer.clearLayers();
-  const trust = trustLevels(S.records, S.trust);
+  const trust = trustLevels(allRecords(), S.trust);
   const min = TRUST_LEVELS.indexOf(S.minLevel);
-  const shown = S.records.filter((r) => (S.filter === "all" || r.species === S.filter) && TRUST_LEVELS.indexOf(trust.get(r.id).level) >= min);
+  const shown = allRecords().filter((r) => (S.filter === "all" || r.species === S.filter) && TRUST_LEVELS.indexOf(trust.get(r.id).level) >= min);
   shown.forEach((r) => {
     const tr = trust.get(r.id);
     L.marker([r.lat, r.lon], { icon: icon(r, tr), title: t("sp_short_" + r.species) }).bindPopup(() => popupHtml(r, tr)).addTo(markerLayer);
@@ -323,15 +397,31 @@ function onMapClick(e) {
   endPick(true);
 }
 
-async function onPopupAction(e) {
-  const del = e.target.closest("[data-del]");
-  if (del && confirm(t("confirm_delete"))) {
-    await remove("records", del.dataset.del);
-    S.records = S.records.filter((r) => r.id !== del.dataset.del);
-    map.closePopup();
-    renderMarkers();
-    renderSummary();
+async function onShareAction(e) {
+  const find = (attr) => {
+    const el = e.target.closest(`[${attr}]`);
+    return el && S.records.find((r) => r.id === el.getAttribute(attr));
+  };
+  const sh = find("data-share");
+  if (sh) {
+    await updateRecord(sh, { shared: "pending", share_token: sh.share_token || newToken() });
+    syncShare(sh);
   }
+  const un = find("data-unshare");
+  if (un && confirm(t("confirm_unshare"))) await unshare(un);
+}
+
+async function onPopupAction(e) {
+  await onShareAction(e);
+  const del = e.target.closest("[data-del]");
+  if (!del || !confirm(t("confirm_delete"))) return;
+  const rec = S.records.find((r) => r.id === del.dataset.del);
+  if (rec?.shared === "yes" && !(await unshare(rec))) return;
+  await remove("records", del.dataset.del);
+  S.records = S.records.filter((r) => r.id !== del.dataset.del);
+  map.closePopup();
+  renderMarkers();
+  renderSummary();
 }
 
 async function onStatusChange(e) {
@@ -539,7 +629,8 @@ function renderSummary() {
   }
   const rows = (obj, pre) => Object.entries(obj).map(([k, v]) => `<tr><td>${esc(t(pre + k))}</td><td class="n">${v}</td></tr>`).join("");
   const byTrust = {};
-  trustLevels(S.records, S.trust).forEach(({ level }) => { byTrust[level] = (byTrust[level] || 0) + 1; });
+  const trust = trustLevels(allRecords(), S.trust);
+  S.records.forEach((r) => { const lv = trust.get(r.id).level; byTrust[lv] = (byTrust[lv] || 0) + 1; });
   $("#summary").innerHTML = `<table class="sum"><tr><th>${esc(t("species"))}</th><th></th></tr>${rows(s.bySpecies, "sp_short_")}
     <tr><th>${esc(t("trust_title"))}</th><th></th></tr>${rows(byTrust, "trust_")}
     ${Object.keys(s.nests).length ? `<tr><th>${esc(t("nests_by_status"))}</th><th></th></tr>${rows(s.nests, "st_")}` : ""}</table>
@@ -704,6 +795,7 @@ function wire() {
   document.addEventListener("change", onStatusChange);
   document.addEventListener("error", onRemoteImgError, true);
   $("#map-load").onclick = loadBaseMap;
+  $("#community-load").onclick = loadCommunityLayer;
   $("#add-station").onclick = () => {
     S.stations.push({ id: "s" + Date.now().toString(36), lat: null, lon: null, bearings: [], times: [], startedAt: null });
     saveStations();
@@ -726,6 +818,8 @@ async function init() {
   [S.records, S.stations] = await Promise.all([all("records"), all("stations")]);
   applyText();
   goto((location.hash || "").slice(1) || "report");
+  syncPending();
+  window.addEventListener("online", syncPending);
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("sw.js").then(() => {
       $("#sw-msg").textContent = t("offline_ready");

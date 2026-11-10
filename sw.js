@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
 // (opt-in map tiles, opt-in Wikimedia photos) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-2026-11-10-3";
+const VERSION = "vc-2026-11-10-4";
 const SHELL = [
   "./",
   "index.html",
@@ -19,6 +19,8 @@ const SHELL = [
   "src/geo.js",
   "src/store.js",
   "src/guide.js",
+  "src/config.js",
+  "src/community.js",
   "img/icon.svg",
   "img/icon-192.png",
   "img/icon-512.png",

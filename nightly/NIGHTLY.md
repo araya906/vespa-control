@@ -37,7 +37,7 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 - All user data stays on the device (IndexedDB/localStorage). Nothing is sent anywhere unless the user explicitly exports or shares it.
 - Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`), camera/file picker, compass. Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
 - Photos must be re-encoded on device (metadata stripped) before saving.
-- Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. The only allowed `connect-src` host is `https://commons.wikimedia.org` (opt-in photo titles only); never add others, and never send user data in any request.
+- Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. The only allowed `connect-src` hosts are `https://commons.wikimedia.org` (opt-in photo titles only) and the open-data API origin in `src/config.js`; never add others. The open-data payload is exactly `publicPayload()` in `src/community.js` (`chk_share_minimal`): never add fields that could identify a person (notes, photos, exact location, exact time, device data).
 - Exports meant for sharing keep rounding locations (~100 m) and dropping photos.
 
 **Safety content:**
@@ -52,6 +52,11 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 **Images:**
 - Illustrations: original drawings (SVG, `tools/art.py` or hand-written), stored locally.
 - Real photos: Wikimedia Commons files listed in `PHOTOS` (`src/media.js`), requested only after opt-in; credits come from the Commons API, never typed by hand. Add files only when the species/nest is clearly identified on the file page. Never copyrighted photos from other sites.
+
+**Open-data server (`server/`):**
+- Must stay on Cloudflare's Free plan forever: no paid features, no bindings or products that require a payment method.
+- The nightly run cannot deploy it. Change `server/` only when a ROADMAP item says so; then say in the final report that the owner must run `cd server && npx wrangler deploy`, and keep the app working with the currently deployed server (backwards compatible).
+- Schema changes only as new `server/migrations/NNNN_*.sql` files, never destructive.
 
 **Code and repo:**
 - Functions under 50 lines (`chk_functions_under_50_lines`). No new dependencies or build tools without a ROADMAP decision.

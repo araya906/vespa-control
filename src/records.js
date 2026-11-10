@@ -41,7 +41,9 @@ export function makeRecord(input, now = new Date()) {
     height_m: input.type === "nest" ? num(input.height_m) : null,
     notes: (input.notes || "").trim(),
     photo: input.photo || null,
-    region: input.region || null
+    region: input.region || null,
+    shared: input.shared || null,
+    share_token: input.share_token || null
   };
   return r;
 }
@@ -60,7 +62,7 @@ export function toGeoJSON(records, { decimals = null, photos = false } = {}) {
   return {
     type: "FeatureCollection",
     features: records.map((r) => {
-      const { lat, lon, photo, ...props } = r;
+      const { lat, lon, photo, share_token, ...props } = r;
       if (photos && photo) props.photo = photo;
       if (decimals !== null) props.accuracy_m = Math.max(props.accuracy_m || 0, 111320 / 10 ** decimals);
       return { type: "Feature", geometry: { type: "Point", coordinates: [round(lon, decimals), round(lat, decimals)] }, properties: props };
@@ -79,7 +81,8 @@ export function fromGeoJSON(fc) {
       id: p.id || newId(),
       created: p.created || (new Date()).toISOString(),
       updated: p.updated || p.created || (new Date()).toISOString(),
-      photo: p.photo || null
+      photo: p.photo || null,
+      share_token: null
     };
   });
 }

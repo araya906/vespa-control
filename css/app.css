@@ -150,6 +150,9 @@ label.check > span { display: inline; font-weight: 400; margin: 0; }
 .photo-note { margin: -8px 0 12px; }
 #install { margin-bottom: 12px; }
 @media (max-width: 380px) { .top p { display: none; } .sos-btn span { display: none; } }
+.share-box { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-bottom: 14px; background: var(--surface); }
+.share-box .hint { margin: 6px 0 0; }
+#dl-geojson, #dl-csv { text-decoration: none; text-align: center; }
 .trust { font-weight: 600; }
 .trust-unconfirmed { color: var(--muted); }
 .trust-probable { color: var(--warn-ink); }

@@ -74,7 +74,9 @@ function chkPrivacy() {
   const allowed = img.filter((h) => h.startsWith("https://")).map((h) => h.replace("https://", ""));
   const hostOk = (h) => allowed.some((a) => a.startsWith("*.") ? h.endsWith(a.slice(1)) : h === a);
   const connect = csp.match(/connect-src ([^;]+)/)?.[1].trim();
-  const connectOk = ["'self'", "'self' https://commons.wikimedia.org"].includes(connect);
+  const api = read("src/config.js").match(/API_BASE = "([^"]*)"/)?.[1] || "";
+  const apiOrigin = api ? new URL(api).origin : "";
+  const connectOk = connect === ["'self'", "https://commons.wikimedia.org", apiOrigin].filter(Boolean).join(" ");
   check("chk_csp_strict", connectOk && /script-src 'self'(;|$)/.test(csp) && /default-src 'self'/.test(csp), connect);
   const code = walk("src").filter((p) => p.endsWith(".js") && !p.includes("lang")).map((p) => [p, read(p)]);
   const hosts = code.flatMap(([, s]) => [...s.matchAll(/https:\/\/([a-z0-9.{}-]+)\//gi)].map((m) => m[1].replace("{s}", "a")));
@@ -89,7 +91,10 @@ function chkPrivacy() {
   const media = read("src/media.js");
   const oneFetch = (media.match(/\bfetch\(/g) || []).length === 1 && /fetch\(`\$\{COMMONS_API\}\?\$\{q\}`/.test(media)
     && /COMMONS_API = "https:\/\/commons\.wikimedia\.org\/w\/api\.php"/.test(media);
-  check("chk_only_commons_fetch", fetchers.length === 1 && fetchers[0] === "src/media.js" && oneFetch, fetchers.join(" "));
+  const comm = read("src/community.js");
+  const commOk = (comm.match(/\bfetch\(`\$\{API_BASE\}/g) || []).length === (comm.match(/\bfetch\(/g) || []).length;
+  const allowedFetchers = ["src/community.js", "src/media.js"];
+  check("chk_only_allowed_fetch", fetchers.every((f) => allowedFetchers.includes(f)) && oneFetch && commOk, fetchers.join(" "));
   const gallery = read("src/app.js").match(/function renderGallery\([\s\S]*?\n\}/)?.[0] || "";
   const callers = (read("src/app.js").match(/commonsPhotos\(/g) || []).length;
   check("chk_photos_opt_in", callers === 1 && /if \(!S\.photosOn[^\n]*return;[\s\S]*commonsPhotos\(/.test(gallery));
@@ -167,6 +172,27 @@ async function chkTrust() {
     && lv("other") === "unconfirmed" && lv("pair1") === "probable", [...m].map(([k, v]) => `${k}:${v.n}`).join(" "));
 }
 
+async function chkOpenData() {
+  const c = await load("src/community.js");
+  const r = await load("src/records.js");
+  const rec = r.makeRecord({ type: "nest", species: "velutina", lat: 43.123456, lon: -2.987654, notes: "my garden, Calle X 3",
+    photo: "data:image/jpeg;base64,xx", nest_status: "active", created: "2026-08-01T10:37:12.000Z", share_token: "t".repeat(48) });
+  const p = c.publicPayload(rec, "a".repeat(48));
+  const keys = Object.keys(p).sort().join(",");
+  check("chk_share_minimal", keys === "count,created,id,lat,lon,nest_status,species,token,type" && p.lat === 43.123 && p.lon === -2.988
+    && p.created === "2026-08-01T10:00:00.000Z", keys);
+  const fc = r.toGeoJSON([rec], { photos: true });
+  check("chk_export_never_has_token", !("share_token" in fc.features[0].properties) && !r.toCSV([rec]).includes("t".repeat(48)));
+  const s = await load("server/src/index.js");
+  const now = Date.parse("2026-11-10T12:00:00Z");
+  const good = { ...p, created: "2026-11-09T08:15:00Z" };
+  const okRow = s.clean(good, now);
+  const rejects = [{ ...good, species: "unsure" }, { ...good, created: "2027-01-01T00:00:00Z" }, { ...good, lat: 91 },
+    { ...good, token: "short" }, { ...good, type: "x" }, { ...good, count: -1 }].map((b) => s.clean(b, now));
+  check("chk_server_validation", okRow?.lat === 43.123 && okRow.created === "2026-11-09T08:00:00Z" && !("token" in okRow)
+    && !("notes" in okRow) && rejects.every((x) => x === null));
+}
+
 const es = await chkI18n();
 await chkKeysUsed(es);
 chkOffline();
@@ -175,6 +201,7 @@ chkFunctionSize();
 await chkGeo();
 await chkRecords();
 await chkTrust();
+await chkOpenData();
 console.log(results.join("\n"));
 console.log(fails.length ? `\nFAIL (${fails.length}): ${fails.join(", ")}` : "\nALL PASS");
 process.exit(fails.length ? 1 : 0);

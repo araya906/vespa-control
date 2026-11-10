@@ -11,8 +11,11 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [x] Public / technician profiles (2026-11-10)
 - [x] Real photos of hornets and nests from Wikimedia Commons, opt-in, credits from the API (2026-11-10)
 - [x] Reliability filter by nearby reports of the same species (2026-11-10)
+- [x] Open-data sharing: app side and Cloudflare Worker (2026-11-10). Goes live once the owner deploys `server/` and `API_BASE` is set.
 
 ## Next
+
+- [ ] Open data follow-up (only after `API_BASE` is set): show community reports count in the Data summary; let technicians filter the community layer by date range; cache the last downloaded community layer on the device for offline viewing.
 
 - [ ] Catalan (`ca`): full translation of `src/lang/es.js` into `src/lang/ca.js`, register in `LANGS`, note "pending native-speaker review" in README.
 - [ ] Galician (`gl`): same as above.
@@ -32,7 +35,6 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 
 ## Parked
 
-- Shared open dataset of reports: waiting for the owner's decision on the free backend and the data licence (see conversation 2026-11-10). Do not add any backend or upload until this item is moved to "Next" with the decision written down.
 - Bundle real photos locally (offline, no Wikimedia request): needs a one-time download from the owner's computer; this environment cannot reach Wikimedia.
 
 - Android APK (Trusted Web Activity via Bubblewrap): needs the app hosted on HTTPS first and a signing key kept by the owner. Revisit when hosting is decided.

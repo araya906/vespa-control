@@ -57,6 +57,10 @@
         <p class="hint photo-note" data-i18n="photo_note"></p>
         <img id="photo-preview" alt="" hidden>
         <label><span data-i18n="notes"></span><textarea name="notes" rows="3" data-i18n-ph="notes_ph"></textarea></label>
+        <div class="share-box" data-community hidden>
+          <label class="check"><input type="checkbox" name="share" value="1"><span data-i18n="share_label"></span></label>
+          <p class="hint" data-i18n="share_note"></p>
+        </div>
         <div id="form-errors" class="alert err" hidden></div>
         <button type="submit" class="btn primary wide" data-i18n="save"></button>
         <div id="form-ok" class="alert ok" hidden data-i18n="saved"></div>
@@ -73,6 +77,13 @@
         <div class="row"><button type="button" class="btn" id="map-load" data-i18n="map_load"></button></div>
         <label class="check"><input type="checkbox" id="map-remember"><span data-i18n="map_remember"></span></label>
       </div>
+      <div class="card consent" id="community-consent" hidden>
+        <h3 data-i18n="community_title"></h3>
+        <p class="hint" data-i18n="community_text"></p>
+        <div class="row"><button type="button" class="btn" id="community-load" data-i18n="community_load"></button></div>
+        <label class="check"><input type="checkbox" id="community-remember"><span data-i18n="map_remember"></span></label>
+      </div>
+      <p class="hint" id="community-msg" data-community hidden></p>
       <div class="filters" id="map-filters"></div>
       <div class="filters" id="trust-filters"></div>
       <div id="map"></div>
@@ -191,6 +202,12 @@
           <label class="btn ghost file"><span data-i18n="import"></span><input type="file" id="imp" accept=".geojson,.json,application/geo+json,application/json"></label>
         </div>
         <p id="imp-msg" class="hint"></p>
+      </div>
+      <div class="card" data-community hidden>
+        <h2 data-i18n="dataset_title"></h2>
+        <p class="hint" data-i18n="dataset_text"></p>
+        <div class="row"><a class="btn" id="dl-geojson" target="_blank" rel="noopener noreferrer" data-i18n="dataset_geojson"></a>
+          <a class="btn" id="dl-csv" target="_blank" rel="noopener noreferrer" data-i18n="dataset_csv"></a></div>
       </div>
       <div class="card">
         <h2 data-i18n="privacy_title"></h2>

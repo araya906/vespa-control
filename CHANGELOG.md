@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-10 (4)
+
+- Open data: opt-in "share on the public map" per report (minimal, rounded, withdrawable), community reports layer (opt-in),
+  open dataset download (GeoJSON/CSV, CC BY 4.0). Reliability filter now uses own + community reports.
+- `server/`: Cloudflare Worker + D1 (Free plan) with validation, rounding, abuse limit without storing IPs, withdrawal by private key.
+  Hidden in the app until `API_BASE` is set in `src/config.js` after deployment.
+
 ## 2026-11-10 (3)
 
 - Reliability filter: each report is *sin confirmar*, *probable* or *confirmado* depending on how many reports of the same

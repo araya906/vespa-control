@@ -6,7 +6,8 @@ Mobile app (installable web app, Android first) to report, identify and help era
 - **Anybody**: report a hornet, a nest or an attack on hives with GPS, map or pasted coordinates; see your records on a map.
 - **Guide**: what to do after a sting or an attack (112), with a hornet or a nest, how to tell the species apart, where nests usually are and when hornets are active.
 - **Technicians and researchers** (technician profile): nest finding with bait stations (triangulation), technical guide, GeoJSON/CSV export and import.
-- **Privacy first**: everything stays on the phone; no accounts or tracking. See [PRIVACY.md](PRIVACY.md).
+- **Open data, opt-in**: anybody can share a report on the public map (minimal, rounded to ~100 m, withdrawable) and download the open dataset (CC BY 4.0). Server: [`server/`](server/README.md), Cloudflare Free plan.
+- **Privacy first**: no accounts or tracking; nothing leaves the phone unless you choose to share it. See [PRIVACY.md](PRIVACY.md).
 
 Languages: Spanish (default), English. Catalan, Galician and Basque are on the [roadmap](ROADMAP.md).
 
@@ -23,6 +24,7 @@ On Android: open the address in Chrome → ⋮ → *Install app*.
 - `img/`: icons and original SVG illustrations (regenerate with `python3 tools/art.py`).
 - `vendor/leaflet/`: Leaflet 1.9.4 (BSD-2-Clause).
 - `sw.js`, `manifest.webmanifest`: offline and installation.
+- `server/`: open-data API (Cloudflare Worker + D1, Free plan).
 - `nightly/`: brief, checks (`node nightly/check.mjs`) and push gate for the nightly improvement run.
 
 ## Disclaimer
