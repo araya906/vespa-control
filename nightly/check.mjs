@@ -73,15 +73,26 @@ function chkPrivacy() {
   const img = csp.match(/img-src ([^;]+)/)?.[1].split(/\s+/) || [];
   const allowed = img.filter((h) => h.startsWith("https://")).map((h) => h.replace("https://", ""));
   const hostOk = (h) => allowed.some((a) => a.startsWith("*.") ? h.endsWith(a.slice(1)) : h === a);
-  check("chk_csp_strict", /connect-src 'self'/.test(csp) && /script-src 'self'(;|$)/.test(csp) && /default-src 'self'/.test(csp));
+  const connect = csp.match(/connect-src ([^;]+)/)?.[1].trim();
+  const connectOk = ["'self'", "'self' https://commons.wikimedia.org"].includes(connect);
+  check("chk_csp_strict", connectOk && /script-src 'self'(;|$)/.test(csp) && /default-src 'self'/.test(csp), connect);
   const code = walk("src").filter((p) => p.endsWith(".js") && !p.includes("lang")).map((p) => [p, read(p)]);
   const hosts = code.flatMap(([, s]) => [...s.matchAll(/https:\/\/([a-z0-9.{}-]+)\//gi)].map((m) => m[1].replace("{s}", "a")));
   const loaded = hosts.filter((h) => !/^(www\.)?(boe\.es|miteco\.gob\.es|creativecommons\.org)$/.test(h));
   const bad = loaded.filter((h) => !hostOk(h));
   check("chk_external_hosts_in_csp", !bad.length, [...new Set(bad)].join(" "));
-  const banned = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource|watchPosition|userAgentData|getBattery|enumerateDevices|document\.cookie)\b/;
+  const banned = /\b(XMLHttpRequest|sendBeacon|WebSocket|EventSource|watchPosition|userAgentData|getBattery|enumerateDevices|document\.cookie)\b/;
   const offenders = code.filter(([, s]) => banned.test(s)).map(([p]) => p);
   check("chk_no_network_or_tracking_apis", !offenders.length, offenders.join(" "));
+  // The only network call is the opt-in Commons photo request in media.js, and it sends photo titles only.
+  const fetchers = code.filter(([, s]) => /\bfetch\(/.test(s)).map(([p]) => p.replace(/\\/g, "/"));
+  const media = read("src/media.js");
+  const oneFetch = (media.match(/\bfetch\(/g) || []).length === 1 && /fetch\(`\$\{COMMONS_API\}\?\$\{q\}`/.test(media)
+    && /COMMONS_API = "https:\/\/commons\.wikimedia\.org\/w\/api\.php"/.test(media);
+  check("chk_only_commons_fetch", fetchers.length === 1 && fetchers[0] === "src/media.js" && oneFetch, fetchers.join(" "));
+  const gallery = read("src/app.js").match(/function renderGallery\([\s\S]*?\n\}/)?.[0] || "";
+  const callers = (read("src/app.js").match(/commonsPhotos\(/g) || []).length;
+  check("chk_photos_opt_in", callers === 1 && /if \(!S\.photosOn[^\n]*return;[\s\S]*commonsPhotos\(/.test(gallery));
   const app = read("src/app.js");
   const calls = [...app.matchAll(/^.*addBaseLayers\(\);.*$/gm)].map((m) => m[0]);
   // Base tiles may only load from the remembered opt-in or from the user's "load map" click.

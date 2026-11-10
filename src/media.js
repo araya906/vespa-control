@@ -1,23 +1,52 @@
-export const LICENSES = {
-  "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/",
-  "CC BY 3.0": "https://creativecommons.org/licenses/by/3.0/",
-  CC0: "https://creativecommons.org/publicdomain/zero/1.0/"
-};
+// Real photos are requested from Wikimedia Commons only after the user opts in.
+// The API returns the thumbnail URL plus author and licence, so credits are always the file's own.
+// Titles that no longer exist are skipped.
 export const PHOTOS = {
-  velutina: [
-    { file: "Vespa velutina 165382529.jpg", author: "Vespa-Watch (iNaturalist)", license: "CC0", live: true },
-    { file: "Vespa velutina nigrithorax MHNT dos.jpg", author: "Didier Descouens, Muséum de Toulouse", license: "CC BY-SA 4.0" }
-  ],
-  orientalis: [
-    { file: "Vespa orientalis 2.jpg", author: "Gideon Pisanty (Gidip)", license: "CC BY 3.0", live: true }
-  ],
-  crabro: [
-    { file: "Frelon europeen.jpg", author: "Didier Descouens", license: "CC BY-SA 4.0" }
-  ]
+  velutina: ["Vespa velutina 165382529.jpg", "Asian hornet (33252984804) (2).jpg", "Vespa velutina nigrithorax MHNT dos.jpg"],
+  orientalis: ["Vespa orientalis 2.jpg", "Oriental hornet (Vespa orientalis).jpg", "Vespa orientalis.queen.jpg"],
+  crabro: ["Frelon europeen.jpg", "Vespa crabro by Sven Teschke.jpg"],
+  nest_velutina: ["Vespa velutina nest.JPG", "Nido primario de una vespa velutina.jpg", "Vespa velutina nest Paslières n01.jpg", "Intérieur d'un nid de frelons asiatiques.jpg"],
+  nest_orientalis: ["Vespa orientalis nest 1.jpg"],
+  nest_crabro: ["Vespa crabro nest full.jpg", "The European hornet nest (Vespa crabro).jpg"]
 };
-export const enc = (f) => encodeURIComponent(f.replace(/ /g, "_"));
-export const photoUrl = (p, width = 480) => `https://commons.wikimedia.org/wiki/Special:FilePath/${enc(p.file)}?width=${width}`;
-export const pageUrl = (p) => `https://commons.wikimedia.org/wiki/File:${enc(p.file)}`;
+
+const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
+const meta = new Map();
+const plain = (html) => (html && typeof DOMParser !== "undefined"
+  ? new DOMParser().parseFromString(html, "text/html").body.textContent.trim()
+  : String(html || "").replace(/<[^>]*>/g, "").trim());
+
+function toPhoto(file, ii) {
+  const m = ii.extmetadata || {};
+  return {
+    file,
+    thumb: ii.thumburl || ii.url,
+    page: ii.descriptionurl,
+    author: plain(m.Artist?.value) || "?",
+    license: plain(m.LicenseShortName?.value) || "",
+    licenseUrl: m.LicenseUrl?.value || ""
+  };
+}
+
+export async function commonsPhotos(files, width = 480) {
+  const missing = files.filter((f) => !meta.has(f));
+  if (missing.length) {
+    const q = new URLSearchParams({
+      action: "query", format: "json", origin: "*", prop: "imageinfo", iiprop: "url|extmetadata",
+      iiurlwidth: String(width), titles: missing.map((f) => "File:" + f).join("|")
+    });
+    const res = await fetch(`${COMMONS_API}?${q}`, { credentials: "omit", referrerPolicy: "no-referrer", cache: "force-cache" });
+    const data = await res.json();
+    const from = new Map((data.query?.normalized || []).map((n) => [n.to, n.from]));
+    for (const page of Object.values(data.query?.pages || {})) {
+      const name = (from.get(page.title) || page.title).replace(/^File:/, "");
+      const ii = page.imageinfo?.[0];
+      meta.set(name, ii ? toPhoto(name, ii) : null);
+    }
+    missing.forEach((f) => { if (!meta.has(f)) meta.set(f, null); });
+  }
+  return files.map((f) => meta.get(f)).filter(Boolean);
+}
 
 // Local illustrations (original SVG, always available offline, no network).
 export const ART = {

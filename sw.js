@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
 // (opt-in map tiles, opt-in Wikimedia photos) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-2026-11-10-1";
+const VERSION = "vc-2026-11-10-2";
 const SHELL = [
   "./",
   "index.html",

@@ -1,7 +1,7 @@
 import { LANGS, makeT } from "./i18n.js";
 import { REGIONS, regionText } from "./regions.js";
 import { TYPES, SPECIES, NEST_STATUS, NEST_SETTING, makeRecord, validate, toGeoJSON, fromGeoJSON, toCSV, mergeRecords, summarise, parseLocation } from "./records.js";
-import { LICENSES, PHOTOS, photoUrl, pageUrl, ART, NEST_ART } from "./media.js";
+import { PHOTOS, commonsPhotos, ART, NEST_ART } from "./media.js";
 import { stationZone, zonePolygon, combineZones } from "./geo.js";
 import { all, put, remove, clearAll, getSetting, setSetting } from "./store.js";
 import { calendarHtml, sourcesHtml } from "./guide.js";
@@ -79,21 +79,34 @@ function openEmergency() {
   card.scrollIntoView({ block: "start" });
 }
 
-// ---------- species art and opt-in photos ----------
+// ---------- species art and opt-in real photos ----------
+const link = (url, text) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>` : esc(text);
+
 function photoHtml(p) {
-  const kind = p.live ? t("photo_live") : t("photo_specimen");
-  return `<figure><img class="remote" loading="lazy" src="${esc(photoUrl(p))}" alt="${esc(p.file)}" referrerpolicy="no-referrer">
-    <figcaption>${esc(t("photo_credit"))} (${esc(kind)}): <a href="${esc(pageUrl(p))}" target="_blank" rel="noopener noreferrer">${esc(p.author)}</a>,
-    <a href="${esc(LICENSES[p.license])}" target="_blank" rel="noopener noreferrer">${esc(p.license)}</a>, Wikimedia Commons</figcaption></figure>`;
+  return `<figure><img class="remote" loading="lazy" src="${esc(p.thumb)}" alt="${esc(p.file)}" referrerpolicy="no-referrer">
+    <figcaption>${esc(t("photo_credit"))}: ${link(p.page, p.author)}${p.license ? ", " + link(p.licenseUrl, p.license) : ""}, Wikimedia Commons</figcaption></figure>`;
+}
+
+// Illustrations are local. Real photos are requested from Wikimedia Commons only after opt-in.
+function renderGallery(el) {
+  const key = el.dataset.photos;
+  const art = ART[key] ? `<figure class="art"><img src="${ART[key]}" alt="${esc(t("sp_" + key))}"></figure>` : "";
+  el.innerHTML = art;
+  if (!S.photosOn || !PHOTOS[key]) return;
+  commonsPhotos(PHOTOS[key])
+    .then((list) => { el.innerHTML = art + list.map(photoHtml).join(""); })
+    .catch(() => { el.innerHTML = art + `<div class="off">${esc(t("photo_offline"))}</div>`; });
 }
 
 function renderSpecies() {
-  $$("[data-photos]").forEach((el) => {
-    const sp = el.dataset.photos;
-    const art = ART[sp] ? `<figure class="art"><img src="${ART[sp]}" alt="${esc(t("sp_" + sp))}"></figure>` : "";
-    el.innerHTML = art + (S.photosOn ? (PHOTOS[sp] || []).map(photoHtml).join("") : "");
-  });
-  $("#photos-optin").hidden = S.photosOn;
+  $$("[data-photos]").forEach(renderGallery);
+  $$(".photos-optin").forEach((el) => { el.hidden = S.photosOn; });
+}
+
+function photosOn() {
+  S.photosOn = true;
+  setSetting("photos_ok", true);
+  renderSpecies();
 }
 
 function onRemoteImgError(e) {
@@ -574,6 +587,7 @@ function onDocClick(e) {
     goto(g.dataset.goto);
   }
   if (e.target.closest("[data-sos]")) openEmergency();
+  if (e.target.closest("[data-photos-on]")) photosOn();
   const ty = e.target.closest("[data-type]");
   if (ty) {
     S.type = ty.dataset.type;
@@ -644,11 +658,6 @@ function wire() {
   document.addEventListener("change", onStatusChange);
   document.addEventListener("error", onRemoteImgError, true);
   $("#map-load").onclick = loadBaseMap;
-  $("#btn-photos").onclick = () => {
-    S.photosOn = true;
-    setSetting("photos_ok", true);
-    renderSpecies();
-  };
   $("#add-station").onclick = () => {
     S.stations.push({ id: "s" + Date.now().toString(36), lat: null, lon: null, bearings: [], times: [], startedAt: null });
     saveStations();

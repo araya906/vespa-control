@@ -22,10 +22,10 @@ There are no accounts, no servers, no analytics, no ads and no cookies. "Delete 
 
 - The app's own files, from the address you installed it from.
 - **Only if you tap "Load base map"**: map tiles from CARTO (`*.basemaps.cartocdn.com`, OpenStreetMap data) and Esri (`server.arcgisonline.com`). Those servers see your IP address and the area you view.
-- **Only if you tap "Show real photos"**: reference photos from Wikimedia Commons (`commons.wikimedia.org`, `upload.wikimedia.org`). Wikimedia sees your IP address.
+- **Only if you tap "Show real photos"**: the app asks the Wikimedia Commons API (`commons.wikimedia.org`) for a fixed list of reference photos and their author/licence, then loads the images (`upload.wikimedia.org`). Wikimedia sees your IP address; nothing about you or your records is sent.
 - Links to official sites (BOE, MITECO, licences) open only when you tap them.
 
-These are the only external hosts allowed by the app's Content-Security-Policy. The app cannot send your records anywhere: `connect-src` is limited to the app's own origin.
+These are the only external hosts allowed by the app's Content-Security-Policy. The app cannot send your records anywhere: `connect-src` allows only the app's own origin and the Commons photo API, and that request contains only photo titles.
 
 ## Sharing
 

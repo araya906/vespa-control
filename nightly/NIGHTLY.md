@@ -37,7 +37,7 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 - All user data stays on the device (IndexedDB/localStorage). Nothing is sent anywhere unless the user explicitly exports or shares it.
 - Device APIs only on an explicit tap and only once: location (`getCurrentPosition`, never `watchPosition`), camera/file picker, compass. Never read contacts, device identifiers, battery, sensors in the background, clipboard without a tap, or other apps' data.
 - Photos must be re-encoded on device (metadata stripped) before saving.
-- Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. Never add `connect-src` hosts.
+- Any request to a third-party host must be opt-in (button + clear text saying who receives what), use `referrerpolicy="no-referrer"`, and the host must be added to the CSP in `index.html` and to `PRIVACY.md`. The only allowed `connect-src` host is `https://commons.wikimedia.org` (opt-in photo titles only); never add others, and never send user data in any request.
 - Exports meant for sharing keep rounding locations (~100 m) and dropping photos.
 
 **Safety content:**
@@ -50,7 +50,8 @@ a nest or are stung, and helps technicians and researchers find and eradicate ne
 - A new language is registered in `LANGS` only when complete. Mark machine-assisted translations in `README.md` as "pending native-speaker review".
 
 **Images:**
-- Only original drawings (SVG, `tools/art.py` or hand-written) or openly licensed images stored locally with author, licence and source shown in the app. Never copyrighted photos, never hotlinked images without opt-in.
+- Illustrations: original drawings (SVG, `tools/art.py` or hand-written), stored locally.
+- Real photos: Wikimedia Commons files listed in `PHOTOS` (`src/media.js`), requested only after opt-in; credits come from the Commons API, never typed by hand. Add files only when the species/nest is clearly identified on the file page. Never copyrighted photos from other sites.
 
 **Code and repo:**
 - Functions under 50 lines (`chk_functions_under_50_lines`). No new dependencies or build tools without a ROADMAP decision.

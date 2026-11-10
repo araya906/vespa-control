@@ -9,6 +9,7 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [x] Guide: emergency/112, what to do with a hornet or a nest, where nests are, calendar, beekeepers, technicians (2026-11-10)
 - [x] Original SVG illustrations of the three hornets and four nest types (2026-11-10)
 - [x] Public / technician profiles (2026-11-10)
+- [x] Real photos of hornets and nests from Wikimedia Commons, opt-in, credits from the API (2026-11-10)
 
 ## Next
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-10 (2)
+
+- Real photos of the three hornets and of their nests (Wikimedia Commons), shown next to the illustrations after one opt-in tap;
+  author and licence come from the Commons API for each file. CSP `connect-src` allows only `commons.wikimedia.org` for this.
+- `.nojekyll` for GitHub Pages.
+
 ## 2026-11-10
 
 - Split the single-file app into plain ES modules (`src/`), vendored Leaflet, `css/app.css`.
