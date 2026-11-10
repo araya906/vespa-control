@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
 // (opt-in map tiles, opt-in Wikimedia photos) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-2026-11-10-6";
+const VERSION = "vc-2026-11-10-7";
 const SHELL = [
   "./",
   "index.html",
@@ -34,8 +34,11 @@ const SHELL = [
   "img/nests/crabro-hollow.svg"
 ];
 
+// cache: "reload" bypasses the browser HTTP cache so a new version never stores old files.
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION)
+    .then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
@@ -44,12 +47,20 @@ self.addEventListener("activate", (e) => {
     .then(() => self.clients.claim()));
 });
 
+// Network first (always the latest, consistent version online), cache as offline fallback.
+async function networkFirst(req) {
+  const cache = await caches.open(VERSION);
+  try {
+    const res = await fetch(req, { cache: "no-cache" });
+    if (res.ok) cache.put(req, res.clone());
+    return res;
+  } catch {
+    return (await cache.match(req, { ignoreSearch: true })) || (req.mode === "navigate" ? cache.match("index.html") : Response.error());
+  }
+}
+
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
-  if (e.request.mode === "navigate") {
-    e.respondWith(fetch(e.request).catch(() => caches.match("index.html")));
-    return;
-  }
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)));
+  e.respondWith(networkFirst(e.request));
 });

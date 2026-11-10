@@ -751,7 +751,16 @@ async function init() {
   window.addEventListener("online", flushOutbox);
   document.addEventListener("visibilitychange", () => { if (!document.hidden && S.outbox.length) flushOutbox(); });
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    navigator.serviceWorker.register("sw.js").then(() => {
+    // When a new version takes over, reload once so page and code always match.
+    let reloaded = false;
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (hadController && !reloaded) {
+        reloaded = true;
+        location.reload();
+      }
+    });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(() => {
       $("#sw-msg").textContent = t("offline_ready");
     }).catch(() => {});
   }

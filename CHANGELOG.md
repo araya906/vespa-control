@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-10 (7)
+
+- Fix: app could open frozen with no text after an update (new page with old cached code). The service worker is now
+  network-first with an offline fallback, precaches bypassing the HTTP cache, and the page reloads once when a new version takes over.
+
 ## 2026-11-10 (6)
 
 - Reports are no longer stored on the phone: they upload automatically to the open map. Unsent reports wait in an outbox
