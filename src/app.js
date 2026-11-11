@@ -142,7 +142,7 @@ function renderLoc() {
   el.textContent = `${S.loc.lat.toFixed(5)}, ${S.loc.lon.toFixed(5)}` + (S.loc.accuracy_m ? ` (${t("accuracy")} ${Math.round(S.loc.accuracy_m)} m)` : "");
 }
 
-// Location is read once, only after a tap. No watchPosition, no background tracking.
+// Location is read once, only after a tap (getCurrentPosition). No continuous tracking, nothing in the background.
 function getGPS() {
   return new Promise((resolve, reject) => {
     if (!window.isSecureContext) return reject(new Error("gps_insecure"));

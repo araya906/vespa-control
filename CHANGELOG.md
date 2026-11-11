@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-11 (1)
+
+- Nightly preflight fix: a code comment in `src/app.js` named a banned API and tripped `chk_no_network_or_tracking_apis`
+  (false positive; behaviour unchanged, check not weakened). `logs/` (local gate logs) is now git-ignored.
+
 ## 2026-11-10 (10)
 
 - Licence: code under GNU AGPL-3.0-or-later (`LICENSE`); illustrations, guide texts and the open dataset under CC BY 4.0.
