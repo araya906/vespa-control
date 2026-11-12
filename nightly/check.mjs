@@ -208,6 +208,20 @@ async function chkOpenData() {
     && !("notes" in okRow) && rejects.every((x) => x === null));
 }
 
+// VespaControl never notifies the authorities: the form, the nest guide and every saved report must say so.
+async function chkAuthorityNotice() {
+  const html = read("index.html");
+  const app = read("src/app.js");
+  const form = html.match(/<form id="report-form"[\s\S]*?<\/form>/)?.[0] || "";
+  const nest = html.match(/<details[^>]*id="g-nest"[\s\S]*?<\/details>/)?.[0] || "";
+  const urgent = app.match(/URGENT_TYPES = (\[[^\]]*\])/)?.[1] || "[]";
+  const langs = await Promise.all(["es", "en"].map((l) => load(`src/lang/${l}.js`)));
+  const textOk = langs.every(({ default: d }) => /112/.test(d.authority_after_urgent) && d.authority_after && d.authority_note);
+  check("chk_authority_notice", /data-i18n="authority_note"/.test(form) && /data-authority/.test(form) && /data-authority/.test(nest)
+    && /async function saveReport[\s\S]*?showAuthority\(rec\.type\);\n\}/.test(app)
+    && JSON.parse(urgent).includes("nest") && JSON.parse(urgent).includes("apiary_attack") && textOk, urgent);
+}
+
 const es = await chkI18n();
 await chkKeysUsed(es);
 chkOffline();
@@ -218,6 +232,7 @@ await chkGeo();
 await chkRecords();
 await chkTrust();
 await chkOpenData();
+await chkAuthorityNotice();
 console.log(results.join("\n"));
 console.log(fails.length ? `\nFAIL (${fails.length}): ${fails.join(", ")}` : "\nALL PASS");
 process.exit(fails.length ? 1 : 0);

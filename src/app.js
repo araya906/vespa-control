@@ -57,6 +57,7 @@ function applyStatic() {
   $("#install").hidden = !S.install;
   $("#report-form").hidden = S.consent !== true;
   $("#report-locked").hidden = S.consent === true;
+  if (!$("#authority").hidden) showAuthority();
   $("#consent-status").textContent = t(S.consent === true ? "consent_status_yes" : "consent_status_no");
   $("#dl-geojson").href = API_BASE + "/reports";
   $("#dl-csv").href = API_BASE + "/reports.csv";
@@ -182,6 +183,24 @@ async function saveReport(ev) {
   if (errs.length) return;
   resetForm(ev.target);
   showFormMsg((await queueAndSend(rec)) ? "saved" : "queued");
+  showAuthority(rec.type);
+}
+
+// VespaControl never notifies the authorities: say so after every report, prominently for nests and apiary attacks.
+const URGENT_TYPES = ["nest", "apiary_attack"];
+function showAuthority(type) {
+  const box = $("#authority");
+  if (type) box.dataset.kind = URGENT_TYPES.includes(type) ? "urgent" : "normal";
+  const urgent = box.dataset.kind === "urgent";
+  box.classList.toggle("urgent", urgent);
+  $("#authority-text").textContent = t(urgent ? "authority_after_urgent" : "authority_after");
+  box.hidden = false;
+  if (type) box.scrollIntoView({ block: "nearest" });
+}
+
+function openWhoToTell() {
+  goto("data");
+  $("#region-card").scrollIntoView({ block: "start" });
 }
 
 // ---------- upload (nothing is kept on the phone once it is sent) ----------
@@ -626,6 +645,10 @@ function onDocClick(e) {
     goto(g.dataset.goto);
   }
   if (e.target.closest("[data-sos]")) openEmergency();
+  if (e.target.closest("[data-authority]")) {
+    e.preventDefault();
+    openWhoToTell();
+  }
   const ty = e.target.closest("[data-type]");
   if (ty) {
     S.type = ty.dataset.type;
@@ -650,6 +673,7 @@ function onDocClick(e) {
 
 function wireReport() {
   $("#report-form").addEventListener("submit", saveReport);
+  $("#authority-close").onclick = () => { $("#authority").hidden = true; };
   $("#btn-gps").onclick = async () => {
     $("#loc-text").textContent = t("gps_wait");
     try { S.loc = await getGPS(); } catch (err) {

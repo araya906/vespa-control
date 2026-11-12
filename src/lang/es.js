@@ -68,6 +68,11 @@ export default {
   outbox_n: "{n} avisos esperando conexión para enviarse.",
   pending_tag: "Pendiente de enviar",
   send_note: "Al guardar, el aviso se envía al mapa público abierto (CC BY 4.0) con la ubicación redondeada a ~100 m. No se guarda en el móvil.",
+  authority_note: "VespaControl no avisa a las autoridades.",
+  authority_btn: "A quién avisar en tu zona",
+  authority_ok: "Entendido",
+  authority_after: "Este aviso no llega a las autoridades. Para que se actúe, comunícalo también por el canal oficial de tu zona (tu ayuntamiento o el servicio de tu comunidad autónoma).",
+  authority_after_urgent: "Importante: VespaControl no avisa a las autoridades. Un nido o un ataque a colmenas hay que comunicarlo también por el canal oficial de tu zona para que lo retiren profesionales. No te acerques ni intentes retirarlo. Si hay peligro inmediato para las personas, llama al 112.",
   consent_title: "Antes de empezar",
   consent_intro: "VespaControl crea un mapa público y abierto de avispa asiática y avispón oriental para ayudar a erradicarlos. Para enviar avisos tienes que aceptar cómo se tratan los datos:",
   consent_points: [

@@ -12,12 +12,12 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [x] Real photos of hornets and nests from Wikimedia Commons, opt-in, credits from the API (2026-11-10)
 - [x] Reliability filter by nearby reports of the same species (2026-11-10)
 - [x] Open-data sharing: app side and Cloudflare Worker (2026-11-10). Goes live once the owner deploys `server/` and `API_BASE` is set.
+- [x] **"This report does not reach the authorities" message (do first, small).** After every saved report, and in the send note,
+  say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
+  with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English. Done 2026-11-12; the button opens the region card in Datos until the regional directory exists.
 
 ## Next
 
-- [ ] **"This report does not reach the authorities" message (do first, small).** After every saved report, and in the send note,
-  say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
-  with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English.
 - [ ] **Basque (`eu`) translation** (owner focus on the Basque Country, 2026-11-10): full translation of `src/lang/es.js` into `src/lang/eu.js`,
   register it in `LANGS` right after Spanish, note "pending native-speaker review" in README. Use the official Basque names of places and bodies
   (Bizkaiko Foru Aldundia, Gipuzkoako Foru Aldundia, Arabako Foru Aldundia, Eusko Jaurlaritza) and *liztor asiarra* / *liztor ekialdekoa* only if

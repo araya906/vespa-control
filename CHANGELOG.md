@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-12 (1)
+
+- "This report does not reach the authorities": after every saved report a notice says VespaControl does not notify
+  the authorities and the user must also use the official channel of their area; nests and apiary attacks get a
+  prominent red version (do not go near it, professionals remove it, 112 if people are in immediate danger).
+  The send note and the guide's "If you find a nest" carry the same line. "Who to tell in your area" opens the
+  region card in Datos (to be replaced by the location-based regional directory). Spanish and English.
+  New check `chk_authority_notice`.
+
 ## 2026-11-11 (1)
 
 - Nightly preflight fix: a code comment in `src/app.js` named a banned API and tripped `chk_no_network_or_tracking_apis`

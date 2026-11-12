@@ -57,9 +57,15 @@
         </div>
         <label id="count-field"><span data-i18n="count"></span><input name="count" type="number" inputmode="numeric" min="0" step="1"></label>
         <p class="hint" data-i18n="send_note"></p>
+        <p class="hint authority-note"><strong data-i18n="authority_note"></strong> <a href="#data" data-authority data-i18n="authority_btn"></a></p>
         <div id="form-errors" class="alert err" hidden></div>
         <button type="submit" class="btn primary wide" data-i18n="save"></button>
         <div id="form-ok" class="alert ok" hidden data-i18n="saved"></div>
+        <div id="authority" class="alert authority" hidden role="status">
+          <p id="authority-text"></p>
+          <div class="row"><button type="button" class="btn small" data-authority data-i18n="authority_btn"></button>
+            <button type="button" class="btn small ghost" id="authority-close" data-i18n="authority_ok"></button></div>
+        </div>
       </form>
     </section>
 
@@ -107,7 +113,8 @@
 
       <details class="card g" id="g-nest"><summary data-i18n="g_nest_title"></summary>
         <div class="alert warn" data-i18n="safety_nest"></div>
-        <ol data-i18n-list="g_nest_steps"></ol></details>
+        <ol data-i18n-list="g_nest_steps"></ol>
+        <p class="hint authority-note"><strong data-i18n="authority_note"></strong> <a href="#data" data-authority data-i18n="authority_btn"></a></p></details>
 
 
       <details class="card g" id="g-where"><summary data-i18n="g_where_title"></summary>
@@ -156,7 +163,7 @@
         <h2 data-i18n="summary"></h2>
         <div id="summary"></div>
       </div>
-      <div class="card">
+      <div class="card" id="region-card">
         <label><span data-i18n="region"></span><select id="region"></select></label>
         <h3 data-i18n="report_to"></h3><p id="region-report"></p>
         <h3 data-i18n="links"></h3><ul id="region-links"></ul>

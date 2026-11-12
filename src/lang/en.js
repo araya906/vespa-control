@@ -68,6 +68,11 @@ export default {
   outbox_n: "{n} reports waiting for a connection to be sent.",
   pending_tag: "Waiting to be sent",
   send_note: "When you save, the report is sent to the open public map (CC BY 4.0) with the location rounded to ~100 m. It is not stored on the phone.",
+  authority_note: "VespaControl does not notify the authorities.",
+  authority_btn: "Who to tell in your area",
+  authority_ok: "Got it",
+  authority_after: "This report does not reach the authorities. For action to be taken, also report it through the official channel of your area (your town council or your autonomous community's service).",
+  authority_after_urgent: "Important: VespaControl does not notify the authorities. A nest or an attack on hives must also be reported through the official channel of your area so that professionals can remove it. Do not go near it or try to remove it. If people are in immediate danger, call 112.",
   consent_title: "Before you start",
   consent_intro: "VespaControl builds an open public map of Asian and oriental hornets to help eradicate them. To send reports you must accept how the data are handled:",
   consent_points: [
