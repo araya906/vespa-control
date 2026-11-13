@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
 // (opt-in map tiles, the open-data server) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-photos-202611120805";
+const VERSION = "vc-2026-11-13-1";
 const SHELL = [
   "./",
   "index.html",
@@ -34,6 +34,22 @@ const SHELL = [
   "img/nests/orientalis-cavity.svg",
   "img/nests/crabro-hollow.svg",
   // PHOTOS:BEGIN
+  "img/photos/velutina-1.jpg",
+  "img/photos/velutina-2.jpg",
+  "img/photos/velutina-3.jpg",
+  "img/photos/orientalis-1.jpg",
+  "img/photos/orientalis-2.jpg",
+  "img/photos/orientalis-3.jpg",
+  "img/photos/crabro-1.jpg",
+  "img/photos/crabro-2.jpg",
+  "img/photos/crabro-3.jpg",
+  "img/photos/nest_velutina-1.jpg",
+  "img/photos/nest_velutina-2.jpg",
+  "img/photos/nest_velutina-3.jpg",
+  "img/photos/nest_orientalis-1.jpg",
+  "img/photos/nest_crabro-1.jpg",
+  "img/photos/nest_crabro-2.jpg",
+  "img/photos/nest_crabro-3.jpg",
   // PHOTOS:END
 ];
 

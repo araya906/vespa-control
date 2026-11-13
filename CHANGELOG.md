@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-13 (1)
+
+- Offline photos fixed: the 16 reference photos added on 2026-11-12 were not in the service worker's offline list
+  (`tools/fetch_photos.mjs` did not match the `// PHOTOS:BEGIN` marker on a Windows CRLF checkout), so the app shell
+  check failed and photos were not available offline. `sw.js` now lists them (VERSION bumped) and the script accepts
+  CRLF. New check `chk_photos_script_crlf`.
+
 ## 2026-11-12 (1)
 
 - "This report does not reach the authorities": after every saved report a notice says VespaControl does not notify

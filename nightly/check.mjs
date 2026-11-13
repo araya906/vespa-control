@@ -121,6 +121,12 @@ async function chkPhotosLocal() {
   const appSrc = read("src/app.js");
   check("chk_photos_local", !bad.length && !/upload\.wikimedia\.org|commons\.wikimedia\.org\/w\/api/.test(appSrc + read("src/media.js")),
     `${all.length} photos; bad: ${bad.map((p) => p.src).join(" ")}`);
+  // tools/fetch_photos.mjs must fill the sw.js photo list on Windows (CRLF) checkouts too.
+  const re = read("tools/fetch_photos.mjs").match(/\.replace\((\/\(\\\/\\\/ PHOTOS:BEGIN[^\n]*?\/), `\$1\$\{files\}\$2`\)/)?.[1];
+  const rx = re ? new Function(`return ${re}`)() : null;
+  const crlf = "x\r\n  // PHOTOS:BEGIN\r\n  // PHOTOS:END\r\n";
+  const out = rx ? crlf.replace(rx, `$1  "img/photos/t.jpg",\n$2`) : "";
+  check("chk_photos_script_crlf", /BEGIN\r?\n  "img\/photos\/t\.jpg",\n  \/\/ PHOTOS:END/.test(out), re || "regex not found");
 }
 
 function chkFunctionSize() {
