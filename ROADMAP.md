@@ -15,13 +15,11 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
 - [x] **"This report does not reach the authorities" message (do first, small).** After every saved report, and in the send note,
   say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
   with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English. Done 2026-11-12; the button opens the region card in Datos until the regional directory exists.
+- [x] **Basque (`eu`) translation** (2026-11-14): `src/lang/eu.js`, pending native-speaker review. *Liztor asiarra* from bizkaia.eus;
+  *V. orientalis* keeps the scientific name (no official Basque name found). Region texts (`src/regions.js`) still Spanish: add `eu` with the regional directory.
 
 ## Next
 
-- [ ] **Basque (`eu`) translation** (owner focus on the Basque Country, 2026-11-10): full translation of `src/lang/es.js` into `src/lang/eu.js`,
-  register it in `LANGS` right after Spanish, note "pending native-speaker review" in README. Use the official Basque names of places and bodies
-  (Bizkaiko Foru Aldundia, Gipuzkoako Foru Aldundia, Arabako Foru Aldundia, Eusko Jaurlaritza) and *liztor asiarra* / *liztor ekialdekoa* only if
-  confirmed in official Basque sources; otherwise keep the scientific name next to the Basque text.
 - [ ] **Regional directory with automatic "who to warn" by location.** Owner priority (2026-11-10). **Start with the Basque Country**
   (Araba, Bizkaia, Gipuzkoa, each with its Diputación Foral programme and fire services), then the rest.
   Already found on an official source (re-verify during the run, then use): Araba — Diputación Foral de Álava document "Vespa velutina Araban 2012-2024"

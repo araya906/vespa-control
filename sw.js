@@ -1,7 +1,7 @@
 // Offline app shell. Only same-origin files are cached; third-party requests
 // (opt-in map tiles, the open-data server) pass straight through and are never stored.
 // Bump VERSION whenever a file in SHELL changes.
-const VERSION = "vc-2026-11-13-1";
+const VERSION = "vc-2026-11-14-1";
 const SHELL = [
   "./",
   "index.html",
@@ -13,6 +13,7 @@ const SHELL = [
   "src/i18n.js",
   "src/lang/es.js",
   "src/lang/en.js",
+  "src/lang/eu.js",
   "src/regions.js",
   "src/records.js",
   "src/media.js",

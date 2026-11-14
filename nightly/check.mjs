@@ -36,7 +36,18 @@ async function chkI18n() {
   const i18n = await load("src/i18n.js");
   const registered = Object.keys(i18n.LANGS);
   check("chk_i18n_registered", registered[0] === "es" && registered.every((l) => langs.includes(l + ".js")), registered.join(","));
+  await chkI18nTranslated(es, registered);
   return es;
+}
+
+// A registered language must really be translated: long strings may not be copied from Spanish.
+async function chkI18nTranslated(es, registered) {
+  for (const l of registered.filter((x) => x !== "es")) {
+    const d = (await load(`src/lang/${l}.js`)).default;
+    const flat = (o) => Object.entries(o).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x, i) => [`${k}.${i}`, x]) : [[k, v]]));
+    const same = flat(d).filter(([k, v]) => v.length > 25 && v === flat(es).find(([k2]) => k2 === k)?.[1]).map(([k]) => k);
+    check(`chk_i18n_translated_${l}`, same.length === 0, same.slice(0, 8).join(" "));
+  }
 }
 
 async function chkKeysUsed(es) {
@@ -221,7 +232,7 @@ async function chkAuthorityNotice() {
   const form = html.match(/<form id="report-form"[\s\S]*?<\/form>/)?.[0] || "";
   const nest = html.match(/<details[^>]*id="g-nest"[\s\S]*?<\/details>/)?.[0] || "";
   const urgent = app.match(/URGENT_TYPES = (\[[^\]]*\])/)?.[1] || "[]";
-  const langs = await Promise.all(["es", "en"].map((l) => load(`src/lang/${l}.js`)));
+  const langs = await Promise.all(Object.keys((await load("src/i18n.js")).LANGS).map((l) => load(`src/lang/${l}.js`)));
   const textOk = langs.every(({ default: d }) => /112/.test(d.authority_after_urgent) && d.authority_after && d.authority_note);
   check("chk_authority_notice", /data-i18n="authority_note"/.test(form) && /data-authority/.test(form) && /data-authority/.test(nest)
     && /async function saveReport[\s\S]*?showAuthority\(rec\.type\);\n\}/.test(app)
