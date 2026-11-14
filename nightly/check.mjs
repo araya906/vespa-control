@@ -48,6 +48,16 @@ async function chkI18nTranslated(es, registered) {
     const same = flat(d).filter(([k, v]) => v.length > 25 && v === flat(es).find(([k2]) => k2 === k)?.[1]).map(([k]) => k);
     check(`chk_i18n_translated_${l}`, same.length === 0, same.slice(0, 8).join(" "));
   }
+  await chkRegionsTranslated(registered);
+}
+
+// Region texts (name, legal status, who to report to, link labels) must exist in every registered language.
+async function chkRegionsTranslated(registered) {
+  const { REGIONS } = await load("src/regions.js");
+  const fields = Object.entries(REGIONS).flatMap(([id, r]) => [["name", r.name], ["report", r.report],
+    ...Object.entries(r.species || {}), ...(r.links || []).map((l, i) => [`link${i}`, l.label])].map(([k, f]) => [`${id}.${k}`, f]));
+  const missing = fields.flatMap(([k, f]) => registered.filter((l) => !f?.[l]).map((l) => `${k}:${l}`));
+  check("chk_i18n_regions", missing.length === 0, missing.slice(0, 8).join(" "));
 }
 
 async function chkKeysUsed(es) {

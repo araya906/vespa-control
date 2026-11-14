@@ -1,11 +1,17 @@
 # Changelog
 
+## 2026-11-14 (2)
+
+- Basque: the region texts that were still in Spanish (region names, legal status of each species, who to report to,
+  official link labels in Datos and the Guide's sources) are now translated. New check `chk_i18n_regions`: every region
+  text must exist in every registered language. `sw.js` VERSION bumped.
+
 ## 2026-11-14 (1)
 
 - Basque (euskara) translation: new `src/lang/eu.js`, listed right after Spanish in the language picker (machine-assisted,
   pending native-speaker review). *Liztor asiarra* follows Bizkaiko Foru Aldundia's protocol page (bizkaia.eus, checked
   2026-11-14); no official Basque name was found for *V. orientalis*, so the scientific name is kept. Region data
-  (legal status, who to report to, links) still falls back to Spanish until the regional directory adds Basque texts.
+  (legal status, who to report to, links) still fell back to Spanish (fixed in 2026-11-14 (2)).
   New check `chk_i18n_translated_*` (long strings may not be copied from Spanish); `chk_authority_notice` now covers every
   registered language. `sw.js` VERSION bumped.
 

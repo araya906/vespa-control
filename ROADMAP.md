@@ -16,7 +16,7 @@ Nightly runs take the first unchecked item. Order = priority. See `nightly/NIGHT
   say clearly that VespaControl does not notify the authorities and that the user must also use the official channel of their area,
   with a button to the regional directory (next item). Nest reports and attacks show it prominently. Spanish and English. Done 2026-11-12; the button opens the region card in Datos until the regional directory exists.
 - [x] **Basque (`eu`) translation** (2026-11-14): `src/lang/eu.js`, pending native-speaker review. *Liztor asiarra* from bizkaia.eus;
-  *V. orientalis* keeps the scientific name (no official Basque name found). Region texts (`src/regions.js`) still Spanish: add `eu` with the regional directory.
+  *V. orientalis* keeps the scientific name (no official Basque name found). Region texts translated too (`chk_i18n_regions`).
 
 ## Next
 
